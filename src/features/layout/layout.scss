@@ -1,0 +1,429 @@
+/* Its fucking mess, one day i will fix it, but not today */
+body.panesMode-active {
+  .cp__plugins-settings input[type='color'],
+  .ls-ui-settings input[type='color'] {
+    pointer-events: auto !important;
+    cursor: pointer;
+  }
+
+  .sidebar-item-drop-area {
+    display: none !important;
+  }
+  .ls-block {
+    padding: 5px 0 !important;
+  }
+  .cp__right-sidebar-topbar {
+    display: none;
+  }
+
+  .cp__right-sidebar.open {
+    max-width: none;
+  }
+
+  .cp__right-sidebar .sidebar-item {
+    padding-top: 0px !important;
+  }
+
+  .cp__right-sidebar-inner .resizer {
+    background: none;
+    transition: 0.3s;
+  }
+
+  #left-container {
+    transition: width 0.3s ease-in-out;
+  }
+
+  .sidebar-item.content.color-level.px-4 {
+    min-width: 33vw;
+    overflow-y: scroll;
+    margin-top: -24px;
+  }
+
+  #right-sidebar {
+    width: 50%;
+  }
+
+  #right-sidebar,
+  .cp__right-sidebar-scrollable {
+    height: 100vh;
+    overflow: auto !important;
+  }
+
+  .cp__right-sidebar .sidebar-item {
+    position: relative;
+    display: inline-block;
+    align-self: flex-start;
+    width: var(--panesMode-pane-width, 1000px);
+    flex-shrink: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    padding-bottom: 0 !important;
+    resize: both;
+    contain: content;
+    content-visibility: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--ls-primary-background-color, #dcdcdc) 70%, #000 30%)
+      transparent;
+    will-change: scroll-position;
+    transition:
+      width 0.1s ease-in-out,
+      border-color 0.15s ease;
+    border: var(--panesMode-active-pane-border-width, 1px) solid
+      var(--panesMode-pane-border-color, transparent);
+    &::-webkit-resizer {
+      border: none;
+      background: linear-gradient(
+        315deg,
+        transparent 0 4px,
+        rgba(0, 0, 0, 0.35) 4px 5px,
+        transparent 5px 9px,
+        rgba(0, 0, 0, 0.35) 9px 10px,
+        transparent 10px
+      );
+      background-position: right bottom;
+      background-size: 12px 12px;
+      background-repeat: no-repeat;
+    }
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: color-mix(
+        in srgb,
+        var(--ls-primary-background-color, #dcdcdc) 70%,
+        #000 30%
+      );
+      border-radius: 8px;
+      border: 3px solid transparent;
+      background-clip: content-box;
+    }
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed {
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .cp__right-sidebar .sidebar-item.collapsed {
+    width: fit-content;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed button:first-child {
+    overflow: visible;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .breadcrumb {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+  }
+
+  .cp__right-sidebar
+    .sidebar-item.panesMode-collapse-vertical.collapsed
+    .breadcrumb.block-parents
+    .ui__icon {
+    transform: rotate(90deg);
+    margin-top: 5px;
+    margin-bottom: 5px;
+    top: 0;
+  }
+
+  .cp__right-sidebar
+    .sidebar-item.panesMode-collapse-vertical.collapsed
+    .font-medium
+    > div
+    > .ls-icon-block {
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .font-medium {
+    margin-top: 6px;
+    margin-left: 0;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .sidebar-item-header {
+    width: fit-content;
+    margin-left: 0 !important;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .sidebar-item-header {
+    writing-mode: vertical-lr;
+    text-orientation: sideways;
+    padding-right: 0;
+    font-weight: inherit;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .rotating-arrow {
+    transform: rotate(90deg) translate(3px, -3px);
+    transform-origin: center;
+  }
+
+  .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed .ls-icon-page {
+    transform: rotate(90deg) translate(-3px, -2px);
+    transform-origin: center;
+    margin: 5px 0;
+  }
+
+  .cp__right-sidebar .sidebar-item {
+    flex: none !important;
+    flex-shrink: 0;
+  }
+
+  .cp__right-sidebar-inner.flex.flex-col.h-full {
+    background-color: var(--panesMode-sidebar-list-bg, transparent);
+  }
+
+  .sidebar-item-list {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    height: 100%;
+    margin: 0;
+    padding: 2px 10px 0 10px;
+    background-color: var(--panesMode-sidebar-list-bg, rgb(248, 248, 248));
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--ls-primary-background-color, #dcdcdc) 70%, #000 30%)
+      transparent;
+    will-change: scroll-position, width;
+  }
+
+  .sidebar-item-list::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--ls-primary-background-color, #dcdcdc) 70%, #000 30%);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  .sidebar-drop-indicator {
+    display: none !important;
+  }
+}
+
+body.panesMode-active[data-theme='dark'] .sidebar-item-list,
+html[data-theme='dark'] body.panesMode-active .sidebar-item-list {
+  background-color: var(
+    --panesMode-sidebar-list-bg-dark,
+    var(--panesMode-sidebar-list-bg, var(--ls-secondary-background-color, #0d0d0d))
+  );
+}
+
+body.panesMode-active {
+  .panesMode-collapse-orientation-toggle,
+  .panesMode-fit-content-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 33px;
+    height: 33px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #9f9f9f;
+    font-size: 33px;
+    line-height: 1;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .panesMode-fit-content-toggle {
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
+    font-weight: 400;
+    color: #636363;
+  }
+
+  .panesMode-collapse-orientation-toggle:hover {
+    color: #8f8f8f;
+  }
+
+  .panesMode-fit-content-toggle:hover {
+    color: #4f4f4f;
+  }
+
+  .panesMode-fit-content-toggle[data-enabled='true'] {
+    color: #636363;
+  }
+
+  .cp__right-sidebar .sidebar-item.selectedPane {
+    border-color: var(--panesMode-active-pane-border-color, #6e5f7b);
+  }
+
+  .doubleRightSidebar {
+    width: calc(100% - var(--ls-left-sidebar-width)) !important;
+    max-width: calc(100% - var(--ls-left-sidebar-width));
+  }
+  .fullRightSidebar {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .leftMenuButton {
+    position: absolute;
+    right: 0;
+    z-index: 3;
+    background: #fff;
+  }
+  .fullScreenTabs {
+    padding-left: 100px;
+  }
+  .ui-items-container[data-type='toolbar'] {
+    > .list-wrap {
+      max-width: fit-content !important;
+    }
+  }
+  .action-buttons--left-sidebar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0.25rem 1rem 0.25rem 1.5rem;
+    button,
+    .button {
+      opacity: 0.6;
+      background-color: var(--left-sidebar-bg-color, transparent);
+    }
+
+    .actionButton {
+      background-color: var(--left-sidebar-bg-color, transparent);
+    }
+
+    .dropdown-wrapper {
+      left: -10px;
+    }
+
+    .ui-items-container[data-type='toolbar'] {
+      flex-wrap: wrap;
+
+      > .list-wrap {
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+    }
+  }
+
+  .panesMode-multicol {
+    column-count: var(--panesMode-column-count, 1);
+    column-gap: var(--panesMode-column-gap, 0);
+    column-fill: balance;
+
+    > .ls-block {
+      break-inside: avoid;
+      width: 100%;
+    }
+  }
+  .sidebar-item.panesMode-pane-drag-target {
+    contain: none !important;
+    overflow: visible !important;
+  }
+
+  .sidebar-item.panesMode-pane-drag-target .panesMode-pane-drop-zones {
+    display: flex;
+    pointer-events: auto;
+  }
+
+  .panesMode-pane-drop-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(128, 128, 128, 0.15);
+    border: 2px dashed transparent;
+    transition: all 0.15s ease;
+
+    span {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      opacity: 0.7;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .panesMode-pane-drop-zone-before {
+    border-radius: 12px 0 0 12px;
+    border-right: 1px solid rgba(128, 128, 128, 0.2);
+  }
+
+  .panesMode-pane-drop-zone-after {
+    border-radius: 0 12px 12px 0;
+    border-left: 1px solid rgba(128, 128, 128, 0.2);
+  }
+
+  .panesMode-pane-drop-zone.panesMode-pane-drop-zone-active {
+    background: rgba(100, 150, 255, 0.1);
+    border-color: rgba(100, 150, 255, 0.5);
+
+    span {
+      opacity: 1;
+      background: rgba(100, 150, 255, 0.2);
+      color: #fff;
+      transform: scale(1.05);
+    }
+  }
+}
+
+html[data-theme='dark'] .cp__right-sidebar .sidebar-item {
+  &::-webkit-resizer {
+    background: linear-gradient(
+      315deg,
+      transparent 0 4px,
+      rgba(255, 255, 255, 0.35) 4px 5px,
+      transparent 5px 9px,
+      rgba(255, 255, 255, 0.35) 9px 10px,
+      transparent 10px
+    );
+  }
+}
+
+html[data-theme='dark'] body.panesMode-active {
+  .panesMode-fit-content-toggle {
+    color: #8a8a8a;
+  }
+
+  .panesMode-fit-content-toggle:hover {
+    color: #b0b0b0;
+  }
+
+  .panesMode-fit-content-toggle[data-enabled='true'] {
+    color: #8a8a8a;
+  }
+
+  .panesMode-pane-drop-zone {
+    background: rgba(80, 80, 80, 0.25);
+
+    span {
+      background: rgba(40, 40, 40, 0.9);
+      color: #ccc;
+    }
+  }
+
+  .panesMode-pane-drop-zone.panesMode-pane-drop-zone-active {
+    background: rgba(80, 130, 200, 0.3);
+    border-color: rgba(80, 130, 200, 0.6);
+
+    span {
+      background: rgba(80, 130, 200, 0.9);
+      color: #fff;
+    }
+  }
+}
+
+.panesMode-pane-drop-zones {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  display: none;
+  z-index: 1000;
+}

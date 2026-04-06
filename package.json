@@ -1,0 +1,32 @@
+{
+  "name": "logseq-panesMode",
+  "version": "1.0.0",
+  "description": "A tiling window manager for Logseq's right sidebar — tabs, pane navigation, resizing, drag-and-drop reordering, projects, and extensive keyboard shortcuts.",
+  "main": "index.html",
+  "author": "Andrii Ch",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Satoriq/logseq-panes-mode"
+  },
+  "scripts": {
+    "dev": "webpack --mode=development --watch",
+    "build": "webpack --mode=production"
+  },
+  "dependencies": {
+    "@logseq/libs": "^0.0.17"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.2.2",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "logseq": {
+    "id": "logseq-panes-mode",
+    "icon": "./logo.svg",
+    "title": "PanesMode",
+    "description": "A tiling window manager for Logseq's right sidebar — tabs, pane navigation, resizing, drag-and-drop reordering, projects, and extensive keyboard shortcuts."
+  }
+}
