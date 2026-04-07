@@ -14,6 +14,10 @@ import { updateTabs } from '../../tabs/tabs';
 import { updatePanesOrderInStorage } from '../panePersistence';
 import { enforceMaxTabsLimit } from '../paneActions';
 import {
+  startShiftClickPaneWatcher,
+  stopShiftClickPaneWatcher,
+} from '../../observers/paneMutations';
+import {
   getActivePaneElement,
   getDesiredOrder,
   getNewPaneCandidate,
@@ -873,6 +877,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       activePaneIndex,
     };
     console.log(DEBUG_PREFIX, 'pending set', globalState.pendingShiftClick);
+    startShiftClickPaneWatcher();
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
 
@@ -942,6 +947,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       activePaneIndex,
     };
     console.log(DEBUG_PREFIX, 'shift+enter pending set', globalState.pendingShiftClick);
+    startShiftClickPaneWatcher();
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
 
@@ -956,6 +962,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
     targetWindow.removeEventListener('mousedown', handleMouseDown, true);
     targetWindow.removeEventListener('click', handleClick, true);
     targetWindow.removeEventListener('keydown', handleKeyDown, true);
+    stopShiftClickPaneWatcher();
     if (pendingShiftClickTimer) {
       clearTimeout(pendingShiftClickTimer);
       pendingShiftClickTimer = null;

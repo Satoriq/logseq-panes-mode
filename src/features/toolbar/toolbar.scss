@@ -54,11 +54,15 @@ html[data-theme='dark'] .ui-items-container[data-type='toolbar'] .actionButton:h
   width: 22px;
   height: 22px;
   color: inherit;
-  transform: translate3d(0, 1px, 0);
+  transform: translate3d(0, -2px, 0);
 }
 
 .ui-items-container[data-type='toolbar'] [id^='logseq-panesMode--'] {
-  height: 34px;
-  line-height: 34px;
-  font-size: 30px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0 !important;
+  line-height: 0;
+  vertical-align: middle;
 }

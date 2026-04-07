@@ -28,10 +28,13 @@ import { getPluginSettings } from '../../core/pluginSettings';
 const SHIFT_CLICK_TIMEOUT_MS = 2000;
 const SHIFT_CLICK_NATIVE_IGNORE_MS = 800;
 const PANE_SYNC_INTERVAL_MS = 100;
+const SHIFT_CLICK_WATCHER_INTERVAL_MS = 50;
 const TAB_SELECTOR = '.panesMode-tab';
 
 let paneOrderSyncInterval: ReturnType<typeof setInterval> | null = null;
 let paneOrderSyncTarget: Element[] | null = null;
+let moduleResizeObserver: ResizeObserver | null = null;
+let shiftClickWatcherInterval: ReturnType<typeof setInterval> | null = null;
 
 const stopPaneOrderSync = (): void => {
   if (paneOrderSyncInterval !== null) {
@@ -39,6 +42,89 @@ const stopPaneOrderSync = (): void => {
     paneOrderSyncInterval = null;
   }
   paneOrderSyncTarget = null;
+};
+
+export const stopShiftClickPaneWatcher = (): void => {
+  if (shiftClickWatcherInterval !== null) {
+    clearInterval(shiftClickWatcherInterval);
+    shiftClickWatcherInterval = null;
+  }
+};
+
+export const startShiftClickPaneWatcher = (): void => {
+  stopShiftClickPaneWatcher();
+
+  const pending = globalState.pendingShiftClick;
+  if (!pending || !moduleResizeObserver) return;
+
+  const watcherTimestamp = pending.timestamp;
+
+  shiftClickWatcherInterval = setInterval(() => {
+    const currentPending = globalState.pendingShiftClick;
+
+    // pendingShiftClick was consumed (handled by mutation observer) — final sync check
+    if (!currentPending || currentPending.timestamp !== watcherTimestamp) {
+      const container = getScrollablePanesContainer();
+      if (container) {
+        const panes = getCurrentSidebarPanes(container);
+        if (!areTabsSyncedWithPanes(panes)) {
+          refreshPanesElementsCache(panes);
+          updateTabs(panes);
+        }
+      }
+      stopShiftClickPaneWatcher();
+
+      return;
+    }
+
+    // Timeout — do a final tabs sync and give up
+    if (Date.now() - currentPending.timestamp > SHIFT_CLICK_TIMEOUT_MS) {
+      const container = getScrollablePanesContainer();
+      if (container) {
+        const panes = getCurrentSidebarPanes(container);
+        if (!areTabsSyncedWithPanes(panes)) {
+          refreshPanesElementsCache(panes);
+          updateTabs(panes);
+        }
+      }
+      globalState.pendingShiftClick = null;
+      stopShiftClickPaneWatcher();
+
+      return;
+    }
+
+    if (!globalState.isPanesModeModeActive || !moduleResizeObserver) {
+      stopShiftClickPaneWatcher();
+
+      return;
+    }
+
+    const container = getScrollablePanesContainer();
+    if (!container) return;
+
+    const currentPanes = getCurrentSidebarPanes(container);
+    if (currentPanes.length === 0) return;
+
+    // Try to handle the shift-click pane open (reorder + tabs)
+    const handled = handleShiftClickPaneOpen(
+      currentPending,
+      currentPanes,
+      moduleResizeObserver
+    );
+
+    if (handled) {
+      refreshPanesElementsCache();
+      stopShiftClickPaneWatcher();
+
+      return;
+    }
+
+    // Not handled yet — at least ensure tabs reflect current DOM state
+    if (!areTabsSyncedWithPanes(currentPanes)) {
+      refreshPanesElementsCache(currentPanes);
+      updateTabs(currentPanes);
+    }
+  }, SHIFT_CLICK_WATCHER_INTERVAL_MS);
 };
 
 const areTabsSyncedWithPanes = (panes: Element[]): boolean => {
@@ -283,6 +369,7 @@ const handleNativeReopenExistingPane = (reorderedPaneIndex: number): boolean => 
 
 // One day i will refactor it, but not today
 export const createPanesMutationObserver = (resizeObserver: ResizeObserver): MutationObserver => {
+  moduleResizeObserver = resizeObserver;
   const panesContainerMutationsObserver = new MutationObserver(mutations => {
     console.log('Panes mutations detected:', mutations);
     globalState.lastPanesMutationAt = Date.now();
@@ -355,6 +442,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
         // stale currentSidebarPanes snapshot, as that would overwrite the
         // sync target and reverse the reorder on the next interval tick.
         refreshPanesElementsCache();
+        stopShiftClickPaneWatcher();
 
         return;
       }

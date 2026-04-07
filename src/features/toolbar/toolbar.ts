@@ -28,10 +28,22 @@ const buildToolbarButtonTemplate = (action: string, iconMarkup: string, label: s
         title="${label}"
         aria-label="${label}"
         style="
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 32px;
+          padding: 0;
+          margin: 0;
+          border: none;
           cursor: pointer !important;
+          font-size: 0;
+          line-height: 0;
+          box-sizing: border-box;
+          vertical-align: middle;
         "
       >
-        <span class="actionButton-icon" aria-hidden="true">${iconMarkup}</span>
+        <span class="actionButton-icon" aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;">${iconMarkup}</span>
       </a>
     `;
 };

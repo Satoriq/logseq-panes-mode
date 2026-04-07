@@ -16,6 +16,7 @@ export const initLeftSidebarObserver = (): MutationObserver | null => {
       const isLeftSideBarOpen = sidebarElement.classList.contains('is-open');
       const isLeftSidebarStateChanged = isLeftSideBarOpen !== isLeftSidebarOpenCached;
       if (!isLeftSidebarStateChanged) return;
+      isLeftSidebarOpenCached = isLeftSideBarOpen;
       const rightSidebar = parent.document.querySelector(
         LOGSEQ_UI_SELECTORS.rightSidebar
       ) as HTMLElement;
@@ -35,7 +36,6 @@ export const initLeftSidebarObserver = (): MutationObserver | null => {
         rightSidebar.classList.add('fullRightSidebar');
       }
       manageActionButtonsPosition();
-      isLeftSidebarOpenCached = isLeftSideBarOpen;
     });
   });
   leftSidebarToggleObserver.observe(leftSidebar, {

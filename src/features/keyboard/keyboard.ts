@@ -21,6 +21,7 @@ import { getPluginSettings } from '../../core/pluginSettings';
 // --- Module state ---
 
 let cleanupPaletteHotkeys: (() => void) | null = null;
+let cleanupPaneArrowHotkeys: (() => void) | null = null;
 
 // --- Shortcut registration helpers ---
 
@@ -243,11 +244,48 @@ const applyPaneArrowKey = (key: string, pane: HTMLElement) => {
   }
 };
 
-const handlePaneArrowShortcut = (key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight') => {
-  if (!isActivePaneIndexValid()) return;
-  const pane = globalState.cachedPanes[globalState.currentActivePaneIndex as number] as HTMLElement;
-  if (!pane) return;
+const handlePaneArrowShortcut = (
+  key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'
+): boolean => {
+  const panes = globalState.cachedPanes.length > 0 ? globalState.cachedPanes : getSidebarPanes();
+  if (!isActivePaneIndexValid(panes)) return false;
+  const pane = panes[globalState.currentActivePaneIndex as number] as HTMLElement;
+  if (!pane) return false;
   requestAnimationFrame(() => applyPaneArrowKey(key, pane));
+
+  return true;
+};
+
+const getEventTargetElement = (target: EventTarget | null): HTMLElement | null => {
+  if (!target || typeof (target as Node).nodeType !== 'number') return null;
+  const node = target as Node;
+
+  return node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
+};
+
+const isEditableTarget = (target: EventTarget | null): boolean => {
+  const element = getEventTargetElement(target);
+  if (!element) return false;
+
+  return Boolean(element.closest('[contenteditable="true"], textarea, input, select'));
+};
+
+const getPaneArrowHotkey = (
+  e: KeyboardEvent
+): 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | null => {
+  const isMod = e.metaKey || e.ctrlKey;
+  if (!isMod || e.altKey) return null;
+
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'ArrowDown':
+      return e.shiftKey ? null : e.key;
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      return e.shiftKey ? e.key : null;
+    default:
+      return null;
+  }
 };
 
 // --- Pane management ---
@@ -467,15 +505,18 @@ const registerPaneManagementShortcuts = (
     'mod+shift+m',
     toggleMultiColumnForActivePane
   );
-  registerShortcut('panesMode.resizeUp', 'Scroll active pane up', 'mod+ArrowUp', () =>
-    handlePaneArrowShortcut('ArrowUp')
-  );
-  registerShortcut('panesMode.resizeDown', 'Scroll active pane down', 'mod+ArrowDown', () =>
-    handlePaneArrowShortcut('ArrowDown')
-  );
-  registerShortcut('panesMode.resizeLeft', 'Shrink active pane width', 'mod+shift+ArrowLeft', () =>
-    handlePaneArrowShortcut('ArrowLeft')
-  );
+  registerShortcut('panesMode.resizeUp', 'Scroll active pane up', 'mod+ArrowUp', () => {
+    handlePaneArrowShortcut('ArrowUp');
+  });
+  registerShortcut('panesMode.resizeDown', 'Scroll active pane down', 'mod+ArrowDown', () => {
+    handlePaneArrowShortcut('ArrowDown');
+  });
+  registerShortcut('panesMode.resizeLeft', 'Shrink active pane width', 'mod+shift+ArrowLeft', () => {
+    handlePaneArrowShortcut('ArrowLeft');
+  });
+  registerShortcut('panesMode.resizeRight', 'Grow active pane width', 'mod+shift+ArrowRight', () => {
+    handlePaneArrowShortcut('ArrowRight');
+  });
   registerShortcut(
     'panesMode.focusTextOnEnter',
     'Focus text in active pane',
@@ -562,6 +603,34 @@ const ensurePaletteNavigationHotkeys = (): void => {
   };
 };
 
+const ensurePaneArrowHotkeys = (): void => {
+  if (cleanupPaneArrowHotkeys) return;
+
+  const paneArrowHotkeyHandler = (e: KeyboardEvent) => {
+    if (!globalState.isPanesModeModeActive) return;
+    if (globalState.isPaneSwitcherModalVisible || globalState.isProjectsModalVisible) return;
+    if (getCommandPaletteRoot()) return;
+    if (isEditableTarget(e.target)) return;
+
+    const key = getPaneArrowHotkey(e);
+    if (!key) return;
+
+    const handled = handlePaneArrowShortcut(key);
+    if (!handled) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const attach = (target: Window) => target.addEventListener('keydown', paneArrowHotkeyHandler, true);
+  attach(window);
+  attach(parent.window);
+  cleanupPaneArrowHotkeys = () => {
+    window.removeEventListener('keydown', paneArrowHotkeyHandler, true);
+    parent.window.removeEventListener('keydown', paneArrowHotkeyHandler, true);
+  };
+};
+
 // --- Entry points ---
 
 export const setupKeyboardShortcuts = async (togglePanesModeMode: () => Promise<void>) => {
@@ -583,6 +652,7 @@ export const setupKeyboardShortcuts = async (togglePanesModeMode: () => Promise<
   registerNumericTabShortcuts(registerShortcut);
 
   ensurePaletteNavigationHotkeys();
+  ensurePaneArrowHotkeys();
 };
 
 export const preventNativeCloseShortcut = (

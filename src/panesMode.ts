@@ -6,6 +6,7 @@ import {
   hideLeftSide,
   showLeftSide,
   manageActionButtonsPosition,
+  restoreActionButtonsToHeader,
   initCustomSidebarResize,
   cleanupCustomSidebarResize,
 } from './features/layout/layout';
@@ -295,11 +296,11 @@ const cleanupPanesModeMode = () => {
 
   resetBodyClasses();
   resetPanesState();
+  cleanupObservers();
   resetSidebarLayout();
   cleanupTabsUi();
   cleanupFeatureUi();
   cleanupGlobalHandlers();
-  cleanupObservers();
 
   resetState();
   console.info('PanesMode cleanup complete.');
@@ -356,7 +357,7 @@ const resetSidebarLayout = () => {
   }
 
   rightSidebar?.classList.remove('fullRightSidebar', 'doubleRightSidebar');
-  manageActionButtonsPosition();
+  restoreActionButtonsToHeader();
 };
 
 const cleanupTabsUi = () => {

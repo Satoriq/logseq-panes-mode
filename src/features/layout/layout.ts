@@ -450,6 +450,22 @@ const placeButtonsInTabsContainer = (tabsContainer: HTMLElement, isVertical: boo
   }
 };
 
+export const restoreActionButtonsToHeader = (): void => {
+  const { actionButtons, leftHeaderButtons } = getHeaderButtons();
+  const leftsideHeader = parent.document.querySelector('#head');
+  if (!leftsideHeader) return;
+
+  resetHeaderButtonClasses(actionButtons, leftHeaderButtons);
+
+  if (leftHeaderButtons && leftHeaderButtons.parentElement !== leftsideHeader) {
+    leftsideHeader.appendChild(leftHeaderButtons);
+  }
+
+  if (actionButtons && actionButtons.parentElement !== leftsideHeader) {
+    leftsideHeader.appendChild(actionButtons);
+  }
+};
+
 export const manageActionButtonsPosition = (): void => {
   const leftSidebar = getLeftSidebar();
   if (!leftSidebar) return;
