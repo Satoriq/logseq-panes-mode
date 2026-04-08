@@ -29,9 +29,10 @@ import { createPaneResizeObserver, addPanesResizeObserver } from './features/pan
 import {
   createPanesMutationObserver,
   startPanesMutationObserver,
+  stopContainerWatchdog,
 } from './features/observers/paneMutations';
 import { setupShiftClickPaneTracking } from './features/panes/shiftActions/paneShiftClick';
-import { setActivePaneByIndex } from './features/panes/paneNavigation';
+import { setActivePaneByIndex, resetActiveTabIndex } from './features/panes/paneNavigation';
 import { preventNativeCloseShortcut, setupKeyboardShortcuts } from './features/keyboard/keyboard';
 import { setupMousePaneFocus } from './features/panes/paneFocusListeners';
 import { setupNativeDragDropListener } from './features/panes/paneNativeDnd';
@@ -63,6 +64,7 @@ let panesContainerMutationsObserver: MutationObserver | null = null;
 let leftSidebarObserver: MutationObserver | null = null;
 let pendingPanesModeModeSetupInterval: ReturnType<typeof setInterval> | null = null;
 let reactivateAfterRightSidebarShown = false;
+const RIGHT_WINDOW_CONTROLS_CLASS = 'panesMode-native-right-window-controls';
 
 const main = async () => {
   await initPluginSettings();
@@ -248,6 +250,10 @@ const applyPanesModeModeUi = () => {
   applyPanesModeStyles(true);
 
   parent.document.body.classList.add('panesMode-active');
+  parent.document.body.classList.toggle(
+    RIGHT_WINDOW_CONTROLS_CLASS,
+    globalState.isWindows || globalState.isLinux
+  );
 };
 
 const initializeTabsState = () => {
@@ -309,6 +315,7 @@ const cleanupPanesModeMode = () => {
 const resetBodyClasses = () => {
   parent.document.body.classList.remove('panesMode-active');
   parent.document.body.classList.remove('panesMode-sticky-headers');
+  parent.document.body.classList.remove(RIGHT_WINDOW_CONTROLS_CLASS);
 };
 
 const resetPanesState = () => {
@@ -368,6 +375,7 @@ const cleanupTabsUi = () => {
   rightSideContainer?.classList.remove('right-sidebar-vertical-tabs');
 
   resetTabsState();
+  resetActiveTabIndex();
 };
 
 const cleanupFeatureUi = () => {
@@ -416,6 +424,8 @@ const cleanupObservers = () => {
 
   panesContainerMutationsObserver?.disconnect();
   panesContainerMutationsObserver = null;
+
+  stopContainerWatchdog();
 
   leftSidebarObserver?.disconnect();
   leftSidebarObserver = null;

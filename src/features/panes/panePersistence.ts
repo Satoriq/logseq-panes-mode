@@ -47,7 +47,7 @@ export const invalidateLastActivePanesCache = (): void => {
   lastActivePanesCache = null;
 };
 
-export const initialPanesOrder = readPanesOrderFromStorage();
+export const getInitialPanesOrder = (): string[] => readPanesOrderFromStorage();
 
 let lastActivePanesCache: string[] | null = null;
 

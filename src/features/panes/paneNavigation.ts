@@ -120,36 +120,35 @@ export const centerActiveTabWithPadding = (
 
 let previousActiveTabIndex: number = 0;
 
+export const resetActiveTabIndex = (): void => {
+  previousActiveTabIndex = 0;
+};
+
 export const updateActiveTab = (scrollBehavior: ScrollBehavior = 'smooth'): void => {
   const tabsContainer = getTabsContainer(APP_SETTINGS_CONFIG.isVerticalTabs);
   if (!tabsContainer) return;
 
   const newIndex = globalState.currentActivePaneIndex;
+  const tabs = Array.from(tabsContainer.querySelectorAll<HTMLElement>('.panesMode-tab'));
+  const activeIndexString = newIndex !== null ? String(newIndex) : null;
 
-  // if (newIndex === null) {
-  //   tabsContainer
-  //     .querySelectorAll(`.panesMode-tab.${'active-tab'}`)
-  //     .forEach(tab => tab.classList.remove('active-tab'));
-  //   return;
-  // }
+  tabs.forEach(tab => {
+    const shouldBeActive = activeIndexString !== null && tab.dataset.paneIndex === activeIndexString;
+    tab.classList.toggle('active-tab', shouldBeActive);
+  });
 
-  if (previousActiveTabIndex !== null && previousActiveTabIndex !== newIndex) {
-    const prevTab = tabsContainer.querySelector(
-      `.panesMode-tab[data-pane-index="${previousActiveTabIndex}"]`
-    );
-    prevTab?.classList.remove('active-tab');
-  }
-
-  const activeTab = tabsContainer.querySelector(
-    `.panesMode-tab[data-pane-index="${newIndex}"]`
-  ) as HTMLElement;
+  const activeTab =
+    activeIndexString !== null
+      ? (tabs.find(tab => tab.dataset.paneIndex === activeIndexString) as HTMLElement | undefined)
+      : undefined;
 
   if (activeTab) {
-    activeTab.classList.add('active-tab');
     previousActiveTabIndex = newIndex;
     requestAnimationFrame(() => {
       centerActiveTabWithPadding(tabsContainer, activeTab, scrollBehavior);
     });
+  } else if (newIndex !== null) {
+    previousActiveTabIndex = newIndex;
   }
 };
 

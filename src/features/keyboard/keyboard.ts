@@ -55,8 +55,13 @@ const createShortcutRegistrar = (
     label: string,
     binding: string,
     handler: () => Promise<void> | void,
-    requiresPanesMode: boolean = true
+    options: {
+      registerBinding?: boolean;
+      requiresPanesMode?: boolean;
+    } = {}
   ) => {
+    const requiresPanesMode = options.requiresPanesMode ?? true;
+    const registerBinding = options.registerBinding ?? true;
     const wrappedHandler = async () => {
       if (requiresPanesMode && !globalState.isPanesModeModeActive) return;
       await handler();
@@ -64,7 +69,7 @@ const createShortcutRegistrar = (
 
     logseq.App.registerCommandPalette({ key, label }, wrappedHandler);
 
-    if (!binding) return;
+    if (!binding || !registerBinding) return;
 
     const normalizedBinding = binding.trim().toLowerCase();
     if (!normalizedBinding || usedBindings.has(normalizedBinding)) return;
@@ -454,7 +459,7 @@ const registerModeShortcuts = (
     'Toggle panesMode mode',
     'mod+shift+y',
     togglePanesModeMode,
-    false
+    { requiresPanesMode: false }
   );
 };
 
@@ -463,7 +468,7 @@ const registerPaneNavigationShortcuts = (
 ) => {
   registerShortcut('panesMode.nextPane', 'Move active to next pane', 'mod+e', handleNextPane);
   registerShortcut('panesMode.prevPane', 'Move active to previous pane', 'mod+q', handlePrevPane);
-  registerShortcut('panesMode.focusBottom', 'Focus bottom of pane', 'mod+g', () =>
+  registerShortcut('panesMode.focusBottom', 'Focus bottom of pane', 'mod+d', () =>
     focusPageEdge('bottom')
   );
   registerShortcut('panesMode.focusTop', 'Focus top of pane', 'mod+u', () => focusPageEdge('top'));
@@ -496,7 +501,7 @@ const registerPaneManagementShortcuts = (
   registerShortcut(
     'panesMode.toggleCollapse',
     'Toggle pane collapse',
-    'mod+shift+c',
+    'mod+t',
     handleToggleCollapse
   );
   registerShortcut(
@@ -505,22 +510,48 @@ const registerPaneManagementShortcuts = (
     'mod+shift+m',
     toggleMultiColumnForActivePane
   );
-  registerShortcut('panesMode.resizeUp', 'Scroll active pane up', 'mod+ArrowUp', () => {
-    handlePaneArrowShortcut('ArrowUp');
-  });
-  registerShortcut('panesMode.resizeDown', 'Scroll active pane down', 'mod+ArrowDown', () => {
-    handlePaneArrowShortcut('ArrowDown');
-  });
-  registerShortcut('panesMode.resizeLeft', 'Shrink active pane width', 'mod+shift+ArrowLeft', () => {
-    handlePaneArrowShortcut('ArrowLeft');
-  });
-  registerShortcut('panesMode.resizeRight', 'Grow active pane width', 'mod+shift+ArrowRight', () => {
-    handlePaneArrowShortcut('ArrowRight');
-  });
+  // Arrow resize shortcuts are handled by the capture-phase keydown listener below.
+  // Registering them with Logseq causes false self-conflicts in the shortcut UI.
+  registerShortcut(
+    'panesMode.resizeUp',
+    'Scroll active pane up',
+    'mod+ArrowUp',
+    () => {
+      handlePaneArrowShortcut('ArrowUp');
+    },
+    { registerBinding: false }
+  );
+  registerShortcut(
+    'panesMode.resizeDown',
+    'Scroll active pane down',
+    'mod+ArrowDown',
+    () => {
+      handlePaneArrowShortcut('ArrowDown');
+    },
+    { registerBinding: false }
+  );
+  registerShortcut(
+    'panesMode.resizeLeft',
+    'Shrink active pane width',
+    'mod+shift+ArrowLeft',
+    () => {
+      handlePaneArrowShortcut('ArrowLeft');
+    },
+    { registerBinding: false }
+  );
+  registerShortcut(
+    'panesMode.resizeRight',
+    'Grow active pane width',
+    'mod+shift+ArrowRight',
+    () => {
+      handlePaneArrowShortcut('ArrowRight');
+    },
+    { registerBinding: false }
+  );
   registerShortcut(
     'panesMode.focusTextOnEnter',
     'Focus text in active pane',
-    'mod+shift+f',
+    'mod+shift+d',
     handleFocusTextOnEnter
   );
 };
@@ -553,7 +584,7 @@ const registerPaletteShortcuts = (registerShortcut: ReturnType<typeof createShor
     () => {
       moveCommandPaletteSelection('down');
     },
-    false
+    { requiresPanesMode: false }
   );
   registerShortcut(
     'panesMode.paletteUp',
@@ -562,7 +593,7 @@ const registerPaletteShortcuts = (registerShortcut: ReturnType<typeof createShor
     () => {
       moveCommandPaletteSelection('up');
     },
-    false
+    { requiresPanesMode: false }
   );
 };
 
@@ -622,7 +653,8 @@ const ensurePaneArrowHotkeys = (): void => {
     e.stopPropagation();
   };
 
-  const attach = (target: Window) => target.addEventListener('keydown', paneArrowHotkeyHandler, true);
+  const attach = (target: Window) =>
+    target.addEventListener('keydown', paneArrowHotkeyHandler, true);
   attach(window);
   attach(parent.window);
   cleanupPaneArrowHotkeys = () => {

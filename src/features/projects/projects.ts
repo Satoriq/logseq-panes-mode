@@ -9,8 +9,10 @@ import { globalState } from '../../core/pluginGlobalState';
 import type { ProjectListItem } from './types';
 import { debounce, showError, showSuccess, waitForDomChanges } from '../../core/utils';
 import { EXPECTED_MUTATIONS } from '../observers/types';
+import { stopPaneOrderSync } from '../observers/paneMutations';
 import { getCurrentSidebarPanes, refreshPanesElementsCache } from '../panes/paneCache';
 import { setActivePaneByIndex } from '../panes/paneNavigation';
+import { updatePanesOrderInStorage } from '../panes/panePersistence';
 import { updateTabs } from '../tabs/tabs';
 import { getAllProjectsList, saveProject, deleteProject, getProjectById } from './projectStorage';
 import { PROJECTS_CLASSES } from './consts';
@@ -262,12 +264,23 @@ const applyProjectPaneLayout = (project: ProjectListItem['data'], container: HTM
   const newPanes = getCurrentSidebarPanes();
   const idToPaneMap = getPaneIdToElementMap(newPanes);
 
+  // Stop any existing sync interval so it doesn't revert our reorder
+  stopPaneOrderSync();
+
+  // Mark as expected so the mutation observer won't fight the reorder
+  globalState.expectedMutations.push(EXPECTED_MUTATIONS.newSidebarItemsReordering);
+
   project.panesOrder.forEach(pageId => {
     const pane = idToPaneMap.get(pageId);
     if (pane) {
       container.appendChild(pane);
     }
   });
+
+  // Refresh cache and storage immediately so the observer treats this order as canonical
+  const reorderedPanes = getCurrentSidebarPanes();
+  refreshPanesElementsCache(reorderedPanes);
+  updatePanesOrderInStorage(reorderedPanes);
 
   idToPaneMap.forEach((pane, pageId) => {
     const paneElement = pane as HTMLElement;

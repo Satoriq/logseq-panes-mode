@@ -20,8 +20,28 @@
 
 ---
 
+### Light mode
+
 <p align="center">
-  <img src="./github-assets/github-image.png" alt="Panes mode screenshot" width="100%" />
+  <a href="https://github.com/satoriq/logseq-panes-mode/blob/main/github-assets/github-image-light.png">
+    <img
+      src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/github-image-light.png"
+      alt="Panes mode light mode screenshot"
+      width="100%"
+    />
+  </a>
+</p>
+
+### Dark mode
+
+<p align="center">
+  <a href="https://github.com/satoriq/logseq-panes-mode/blob/main/github-assets/github-image-dark.png">
+    <img
+      src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/github-image-dark.png"
+      alt="Panes mode dark mode screenshot"
+      width="100%"
+    />
+  </a>
 </p>
 
 ## Why
@@ -41,11 +61,15 @@ Logseq current UI is great at outlining but not perfect for further work with da
 
 ## Features
 
-Video showcase:
+Video illustration (click on image to go youtube):
 
 <p align="center">
   <a href="https://youtu.be/7Bv_xHozLNQ">
-    <img src="https://img.youtube.com/vi/7Bv_xHozLNQ/hqdefault.jpg" alt="Panes mode video showcase" width="100%" />
+    <img
+      src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/github-image-youtube.png"
+      alt="Panes mode video showcase"
+      width="100%"
+    />
   </a>
 </p>
 
@@ -69,7 +93,7 @@ Video showcase:
 | `Cmd/Ctrl+E`                      | Next pane                                      |
 | `Cmd/Ctrl+Q`                      | Previous pane                                  |
 | `Cmd/Ctrl+W`                      | Close current pane                             |
-| `Cmd/Ctrl+Shift+C`                | Toggle pane collapse                           |
+| `Cmd/Ctrl+T`                      | Toggle pane collapse                           |
 | `Cmd/Ctrl+Shift+H`                | Move pane left                                 |
 | `Cmd/Ctrl+Shift+L`                | Move pane right                                |
 | `Cmd/Ctrl+S`                      | Pane switcher                                  |
@@ -80,24 +104,24 @@ Video showcase:
 | `Cmd/Ctrl+Shift+Arrow Left/Right` | Resize active pane                             |
 | `Cmd/Ctrl+G`                      | Jump to bottom of pane                         |
 | `Cmd/Ctrl+U`                      | Jump to top of pane                            |
-| `Cmd/Ctrl+Shift+T`                | Toggle tabs visibility                         |
-| `Cmd/Ctrl+Shift+F`                | Focus text in active pane                      |
+| `Cmd/Ctrl+Shift+Enter`            | Focus text in active pane                      |
 | `Cmd/Ctrl+J` / `Cmd/Ctrl+K`       | Navigate native/plugin search/selector         |
 | `Cmd/Ctrl+1-9`                    | Jump to pane by number                         |
 
 ## Details
 
+- **IMPORTANT** — To scroll horizontaly use Shift + Mouse wheel. It works in any app.
 - **New pane placement** — Every new pane opens to the right of the current active/selected one, same for opening existing panes.
 - **Persistent layout** — Size, order, collapse of panes is stored in localStorage and logseq plugin storage and restored when toggling on/off. There are 2 panes size modes: "Fit content" (toggled by the arrow left of the close icon) and manual resize with the right bottom edge handle. Both are saved.
 - **Projects** (`Cmd/Ctrl+Shift+S`) — Save and restore which panes are open, their order, size, and collapsed state. When you're deep into a project but need to switch to another subject/research, save the current panes state in a Project and restore it when needed.
 - **Max panes / Clean unused panes** — Max panes is mostly useful for the "Clean unused panes" button. It removes every pane except the last N (max panes number in settings) active panes. Click it when things start to feel laggy. When auto-close is ON (off by default), the plugin will auto-close panes until the max-panes number remains.
-- **Styles from video** - [Here](https://github.com/satoriq/logseq-styles).
+- **Styles from video** - [Here](https://github.com/satoriq/logseq-styles). Dark mode details setted up in plugin settings.
 
 ## Security / Privacy
 
 - **No bloated dependencies** — All pure TypeScript, no millions of unchecked node modules.
 - **No network requests** — Your anime watchlist is safe.
-- **Read-only on your data** — The plugin only makes UI changes, it never touches your notes or graph data. (It can occasionally break Logseq's UI — restart Logseq to reset.)
+- **Not touching your data** — The plugin only makes UI changes, it never touches your notes or graph data.
 
 ## Installation
 
@@ -110,7 +134,7 @@ Video showcase:
 
 ### Manual
 
-1. Download the latest release from the [Releases](https://github.com/Satoriq/logseq-panes-mode/releases) page
+1. Download the latest release from the [Releases](https://github.com/Satoriq/logseq-panes-mode/releases) page, download package.zip
 2. Unzip to a folder
 3. In Logseq, go to **Settings > Plugins**
 4. Click **Load unpacked plugin** and select the release folder
@@ -133,8 +157,7 @@ Yes, but only when `'effect': true` is added to DB by the Logseq team and the DB
 
 - _It's an MVP with a new UI concept_ — Expect bugs. Most are solved by the "Sync panes order" action button or toggling the plugin off and on.
 - _Cursor disappears after editing without changing file state_ — Desync between custom UI and Logseq page state. Reopen the page or restart Logseq.
-- _Tabs state doesn't match panes state_ — Use "Sync panes order". If that doesn't work, toggle the plugin off/on.
-- _Plugin doesnt work as i saw on video, logic is constantly off_ — Most likelly you have potato pc. Try to play with Dom wait coeficient in plugin settings, increase it by 0.5 till its working properly. It is a hack that saved me day or two of work, i will replace it when i have free time.
+- _Plugin doesnt work as i saw on video, logic is constantly off_ — Most likelly you have potato pc. Try to play with DOM wait coeficient in plugin settings, increase it by 0.5 till its working properly. It is temporary hack, I will replace it when have some free time.
 
 ## Contributing
 

@@ -12,6 +12,10 @@
   line-height: 1;
 }
 
+.ui-items-container[data-type='toolbar'] > .list-wrap {
+  max-width: fit-content !important;
+}
+
 .ui-items-container[data-type='toolbar'] .actionButton {
   width: 34px;
   height: 32px;
@@ -54,7 +58,6 @@ html[data-theme='dark'] .ui-items-container[data-type='toolbar'] .actionButton:h
   width: 22px;
   height: 22px;
   color: inherit;
-  transform: translate3d(0, -2px, 0);
 }
 
 .ui-items-container[data-type='toolbar'] [id^='logseq-panesMode--'] {

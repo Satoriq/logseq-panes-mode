@@ -1,5 +1,5 @@
 import { getScrollablePanesContainer } from '../../core/domUtils';
-import { initialPanesOrder } from './panePersistence';
+import { getInitialPanesOrder } from './panePersistence';
 import { getCurrentSidebarPanes } from './paneCache';
 import { refreshPanesElementsCache } from './paneCache';
 
@@ -13,8 +13,9 @@ export const applyInitialPanesOrder = (
 
   const idToPaneMapCopy: Map<string, Element> = new Map(idToPaneMap);
   const reorderedPanes: Element[] = [];
+  const storedOrder = getInitialPanesOrder();
 
-  initialPanesOrder.forEach(storedId => {
+  storedOrder.forEach(storedId => {
     const pane = idToPaneMapCopy.get(storedId);
     if (pane) {
       reorderedPanes.push(pane);

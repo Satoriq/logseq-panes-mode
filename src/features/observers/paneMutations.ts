@@ -35,8 +35,11 @@ let paneOrderSyncInterval: ReturnType<typeof setInterval> | null = null;
 let paneOrderSyncTarget: Element[] | null = null;
 let moduleResizeObserver: ResizeObserver | null = null;
 let shiftClickWatcherInterval: ReturnType<typeof setInterval> | null = null;
+let containerWatchdogObserver: MutationObserver | null = null;
+let containerWatchdogHost: HTMLElement | null = null;
+let containerWatchdogElement: HTMLElement | null = null;
 
-const stopPaneOrderSync = (): void => {
+export const stopPaneOrderSync = (): void => {
   if (paneOrderSyncInterval !== null) {
     clearInterval(paneOrderSyncInterval);
     paneOrderSyncInterval = null;
@@ -106,11 +109,7 @@ export const startShiftClickPaneWatcher = (): void => {
     if (currentPanes.length === 0) return;
 
     // Try to handle the shift-click pane open (reorder + tabs)
-    const handled = handleShiftClickPaneOpen(
-      currentPending,
-      currentPanes,
-      moduleResizeObserver
-    );
+    const handled = handleShiftClickPaneOpen(currentPending, currentPanes, moduleResizeObserver);
 
     if (handled) {
       refreshPanesElementsCache();
@@ -392,7 +391,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
     if (hasSidebarPanesChanged) {
       updatePanesOrderInStorage(currentSidebarPanes);
     }
-
+    console.log(globalState.expectedMutations, 'Expected mutations at start of mutation handling');
     if (globalState.expectedMutations.length > 0) {
       const expectedMutation = globalState.expectedMutations.shift();
       console.log('Expected mutation detected:', expectedMutation);
@@ -417,8 +416,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
               : closedPaneIndex;
           setActivePaneByIndex(newFocusIndex, currentSidebarPanes);
         } else {
-          const adjustedIndex =
-            activeIndex > closedPaneIndex ? activeIndex - 1 : activeIndex;
+          const adjustedIndex = activeIndex > closedPaneIndex ? activeIndex - 1 : activeIndex;
           setActivePaneByIndex(adjustedIndex, currentSidebarPanes);
         }
       }
@@ -565,13 +563,140 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
 };
 
 export const startPanesMutationObserver = (observer: MutationObserver): void => {
-  void waitForDomChanges(() => {
-    const tabsContainer = getScrollablePanesContainer();
-    if (!tabsContainer) {
-      console.warn('Panes container not found, skipping mutation observer setup.');
+  attachPanesObserver(observer);
+  refreshContainerWatchdog(observer);
 
-      return;
+  void waitForDomChanges(() => {
+    reconcileMissedPaneChange(observer);
+  }, 0.5);
+};
+
+export const stopContainerWatchdog = (): void => {
+  containerWatchdogObserver?.disconnect();
+  containerWatchdogObserver = null;
+  containerWatchdogHost = null;
+  containerWatchdogElement = null;
+};
+
+const attachPanesObserver = (panesObserver: MutationObserver): HTMLElement | null => {
+  const panesContainer = getScrollablePanesContainer();
+  if (!panesContainer) {
+    console.warn('Panes container not found, skipping mutation observer setup.');
+
+    return null;
+  }
+
+  if (containerWatchdogElement !== panesContainer) {
+    panesObserver.disconnect();
+    panesObserver.observe(panesContainer, { childList: true });
+    containerWatchdogElement = panesContainer;
+  }
+
+  return panesContainer;
+};
+
+const refreshContainerWatchdog = (panesObserver: MutationObserver): void => {
+  const panesContainer = getScrollablePanesContainer();
+  const nextWatchdogHost = panesContainer?.parentElement as HTMLElement | null;
+  if (!nextWatchdogHost) return;
+
+  if (!containerWatchdogObserver) {
+    containerWatchdogObserver = new MutationObserver(() => {
+      if (!globalState.isPanesModeModeActive) return;
+
+      refreshContainerWatchdog(panesObserver);
+      reconcileMissedPaneChange(panesObserver);
+    });
+  }
+
+  if (containerWatchdogHost === nextWatchdogHost) return;
+
+  containerWatchdogObserver.disconnect();
+  containerWatchdogObserver.observe(nextWatchdogHost, { childList: true });
+  containerWatchdogHost = nextWatchdogHost;
+};
+
+const reconcileMissedPaneChange = (panesObserver: MutationObserver): void => {
+  const currentContainer = attachPanesObserver(panesObserver);
+  if (!currentContainer) return;
+
+  refreshContainerWatchdog(panesObserver);
+
+  const currentPanes = getCurrentSidebarPanes(currentContainer);
+  if (!arePanesDifferent(globalState.cachedPanes, currentPanes)) return;
+
+  console.log('[PanesMode] Watchdog detected pane change missed by observer', {
+    cached: globalState.cachedPanes.length,
+    current: currentPanes.length,
+  });
+
+  // When Logseq replaces the container, ALL DOM elements are new — match by ID
+  // to find which panes are genuinely new vs re-created existing ones.
+  const cachedPaneIds = new Set(
+    globalState.cachedPanes.map(p => getPaneIdFromPane(p)).filter(Boolean)
+  );
+  const genuinelyNewPanes = currentPanes.filter(pane => {
+    const id = getPaneIdFromPane(pane);
+
+    return !id || !cachedPaneIds.has(id);
+  });
+
+  // Find the previously active pane in the new DOM (by ID)
+  const previousActivePane =
+    globalState.currentActivePaneIndex !== null
+      ? globalState.cachedPanes[globalState.currentActivePaneIndex]
+      : null;
+  const previousActivePaneId = previousActivePane ? getPaneIdFromPane(previousActivePane) : null;
+  const activeInNewDom = previousActivePaneId
+    ? currentPanes.find(p => getPaneIdFromPane(p) === previousActivePaneId)
+    : null;
+
+  // Position genuinely new panes after the (previously) active pane.
+  if (genuinelyNewPanes.length > 0) {
+    if (activeInNewDom) {
+      activeInNewDom.classList.add('selectedPane');
     }
-    observer.observe(tabsContainer, { childList: true });
-  }, 3);
+
+    globalState.expectedMutations.push(EXPECTED_MUTATIONS.newSidebarItemsReordering);
+
+    if (globalState.alwaysOpenPanesAtBegining) {
+      for (let i = genuinelyNewPanes.length - 1; i >= 0; i--) {
+        currentContainer.insertBefore(genuinelyNewPanes[i], currentContainer.firstChild);
+      }
+    } else if (activeInNewDom) {
+      let referenceNode: Element | null = activeInNewDom.nextElementSibling;
+      genuinelyNewPanes.forEach(newPane => {
+        currentContainer.insertBefore(newPane, referenceNode);
+        referenceNode = newPane.nextElementSibling;
+      });
+    }
+
+    genuinelyNewPanes.forEach(newPane => {
+      if (moduleResizeObserver) {
+        observePaneForResize(moduleResizeObserver, newPane);
+      }
+      enableFitContentForNewPane(newPane);
+      applyPaneDimensions(newPane as HTMLElement);
+    });
+  }
+
+  const updatedPanes = getCurrentSidebarPanes(currentContainer);
+  refreshPanesElementsCache(updatedPanes);
+  updatePanesOrderInStorage(updatedPanes);
+  updateTabs(updatedPanes);
+
+  if (genuinelyNewPanes.length > 0) {
+    const lastNewPane = genuinelyNewPanes[genuinelyNewPanes.length - 1];
+    const newPaneIndex = updatedPanes.indexOf(lastNewPane);
+    if (newPaneIndex !== -1) {
+      setActivePaneByIndex(newPaneIndex, updatedPanes, true);
+    }
+  } else if (activeInNewDom) {
+    const activeIndex = updatedPanes.indexOf(activeInNewDom);
+    if (activeIndex !== -1) {
+      setActivePaneByIndex(activeIndex, updatedPanes);
+    }
+  } else if (updatedPanes.length > 0) {
+    setActivePaneByIndex(0, updatedPanes);
+  }
 };

@@ -23,6 +23,7 @@ export type GlobalState = {
   lastShiftClickHandledAt: number;
   isMacDesktop: boolean;
   isWindows: boolean;
+  isLinux: boolean;
   isProjectsModalVisible: boolean;
   projectsSelectedIndex: number;
   projectsFilteredList: ProjectListItem[];
@@ -48,6 +49,7 @@ export const globalState: GlobalState = {
   lastShiftClickHandledAt: 0,
   isMacDesktop: /Mac/.test(navigator.platform),
   isWindows: /Win/.test(navigator.platform),
+  isLinux: /Linux/.test(navigator.platform),
   isProjectsModalVisible: false,
   projectsSelectedIndex: 0,
   projectsFilteredList: [],

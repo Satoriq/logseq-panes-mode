@@ -213,6 +213,15 @@ html[data-theme='dark'] body.panesMode-active .sidebar-item-list {
   );
 }
 
+body.panesMode-active.panesMode-native-right-window-controls {
+  --panesMode-native-right-window-controls-padding: 120px;
+}
+
+body.panesMode-active.panesMode-native-right-window-controls #head > .r,
+body.panesMode-active.panesMode-native-right-window-controls .horizontal-tabs-action-buttons-wrapper {
+  padding-right: var(--panesMode-native-right-window-controls-padding);
+}
+
 body.panesMode-active {
   .panesMode-collapse-orientation-toggle,
   .panesMode-fit-content-toggle {
@@ -272,11 +281,6 @@ body.panesMode-active {
   }
   .fullScreenTabs {
     padding-left: 100px;
-  }
-  .ui-items-container[data-type='toolbar'] {
-    > .list-wrap {
-      max-width: fit-content !important;
-    }
   }
   .action-buttons--left-sidebar {
     flex-wrap: wrap;

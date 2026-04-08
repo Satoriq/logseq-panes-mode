@@ -14,6 +14,17 @@ import { getPluginSettings } from '../../core/pluginSettings';
 import { waitForDomChanges } from '../../core/utils';
 import { updateTabs } from '../tabs/tabs';
 
+type CurrentPaneState = {
+  panes: Element[];
+  activePane: Element | null;
+  activeIndex: number | null;
+};
+
+type PendingPaneCloseTarget = {
+  pane: Element;
+  paneId: string | null;
+};
+
 export const togglePaneCollapse = (index: number, updateTabs: (panes?: Element[]) => void) => {
   if (index < 0 || index >= globalState.cachedPanes.length) return;
   const pane = globalState.cachedPanes[index];
@@ -42,9 +53,7 @@ export const togglePaneCollapse = (index: number, updateTabs: (panes?: Element[]
 };
 
 export const closePaneByIndex = (paneIndex: number, updateTabs: (panes?: Element[]) => void) => {
-  const currentPanes = globalState.cachedPanes.length
-    ? globalState.cachedPanes
-    : getCurrentSidebarPanes();
+  const { panes: currentPanes } = getResolvedCurrentPaneState();
   const isOnlyPane = currentPanes.length === 1;
   const pane = currentPanes[paneIndex];
   if (!pane) return;
@@ -80,21 +89,17 @@ export const closePaneByIndexes = (
   updateTabs: (panes?: Element[]) => void
 ) => {
   const sortedIndexes = [...paneIndexes].sort((a, b) => a - b);
-  const currentPaneIndex = isActivePaneIndexValid() ? globalState.currentActivePaneIndex : null;
-  const currentPane = currentPaneIndex !== null ? globalState.cachedPanes[currentPaneIndex] : null;
-  let closedCount = 0;
-  sortedIndexes.forEach(index => {
-    const pane = globalState.cachedPanes[index];
-    const closeButton = pane?.querySelector('[title="Close"]') as HTMLElement | null;
-    if (!pane || !closeButton) return;
-    cleanupPaneListeners(pane);
-    globalState.expectedMutations.push(EXPECTED_MUTATIONS.paneClosingBatch);
-    closeButton.click();
-    closedCount++;
-  });
-  if (closedCount === 0) return;
+  const {
+    panes: currentPanes,
+    activeIndex: currentPaneIndex,
+    activePane: currentPane,
+  } = getResolvedCurrentPaneState();
+  const panesToClose = buildPendingPaneCloseTargets(paneIndexes, currentPanes);
+  if (panesToClose.length === 0) return;
 
-  void waitForDomChanges(() => {
+  void closePaneTargetsSequentially(panesToClose).then(closedCount => {
+    if (closedCount === 0) return;
+
     const updatedPanes = getCurrentSidebarPanes();
     refreshPanesElementsCache(updatedPanes);
     if (updatedPanes.length === 0) {
@@ -112,7 +117,7 @@ export const closePaneByIndexes = (
     );
     setActivePaneByIndex(paneIndexToSelect, updatedPanes);
     updateTabs(updatedPanes);
-  }, 0.5);
+  });
 };
 
 export const cleanLeftPanes = (updateTabs: (panes?: Element[]) => void) => {
@@ -153,8 +158,7 @@ export const cleanUnusedPanes = (updateTabs: (panes?: Element[]) => void) => {
 
     return;
   }
-  const currentPanes =
-    globalState.cachedPanes.length > 0 ? globalState.cachedPanes : getCurrentSidebarPanes();
+  const { panes: currentPanes } = getResolvedCurrentPaneState();
   const panesToClose: number[] = [];
   currentPanes.forEach((pane, index) => {
     const paneId = getPaneIdFromPane(pane);
@@ -218,31 +222,20 @@ const cleanPanesByDirection = (
   direction: 'left' | 'right',
   updateTabs: (panes?: Element[]) => void
 ) => {
-  if (globalState.cachedPanes.length <= globalState.maxTabs) {
+  const { panes: currentPanes, activeIndex } = getResolvedCurrentPaneState();
+
+  if (currentPanes.length <= globalState.maxTabs || activeIndex === null) {
     refreshTabsFromCurrentPanes(updateTabs);
 
     return;
   }
 
-  const panesToClose: number[] = [];
-  const numberOfPanesToClose = globalState.cachedPanes.length - globalState.maxTabs;
-  if (direction === 'left') {
-    for (
-      let i = 0;
-      i < globalState.currentActivePaneIndex && panesToClose.length < numberOfPanesToClose;
-      i++
-    ) {
-      panesToClose.push(i);
-    }
-  } else {
-    for (
-      let i = globalState.cachedPanes.length - 1;
-      i > globalState.currentActivePaneIndex && panesToClose.length < numberOfPanesToClose;
-      i--
-    ) {
-      panesToClose.push(i);
-    }
-  }
+  const panesToClose = getPaneIndexesToClose(
+    currentPanes.length,
+    activeIndex,
+    globalState.maxTabs,
+    direction
+  );
 
   if (panesToClose.length > 0) {
     closePaneByIndexes(panesToClose, updateTabs);
@@ -255,4 +248,112 @@ const refreshTabsFromCurrentPanes = (updateTabs: (panes?: Element[]) => void) =>
   const currentPanes = getCurrentSidebarPanes();
   refreshPanesElementsCache(currentPanes);
   updateTabs(currentPanes);
+};
+
+const buildPendingPaneCloseTargets = (
+  paneIndexes: number[],
+  currentPanes: Element[]
+): PendingPaneCloseTarget[] =>
+  paneIndexes
+    .map(index => currentPanes[index])
+    .filter((pane): pane is Element => Boolean(pane))
+    .map(pane => ({
+      pane,
+      paneId: getPaneIdFromPane(pane),
+    }));
+
+const resolvePendingPaneCloseTarget = (
+  target: PendingPaneCloseTarget,
+  currentPanes: Element[]
+): Element | null => {
+  if (currentPanes.includes(target.pane)) {
+    return target.pane;
+  }
+
+  if (!target.paneId) return null;
+
+  return currentPanes.find(pane => getPaneIdFromPane(pane) === target.paneId) ?? null;
+};
+
+const closePaneTargetsSequentially = async (targets: PendingPaneCloseTarget[]): Promise<number> => {
+  let closedCount = 0;
+
+  for (const target of targets) {
+    const currentPanes = getCurrentSidebarPanes();
+    const pane = resolvePendingPaneCloseTarget(target, currentPanes);
+    if (!pane) continue;
+
+    const closeButton = pane.querySelector('[title="Close"]') as HTMLElement | null;
+    if (!closeButton) continue;
+
+    cleanupPaneListeners(pane);
+    globalState.expectedMutations.push(EXPECTED_MUTATIONS.paneClosingBatch);
+    closeButton.click();
+    closedCount++;
+
+    await waitForDomChanges();
+  }
+
+  return closedCount;
+};
+
+const getResolvedCurrentPaneState = (): CurrentPaneState => {
+  const previousCachedPanes =
+    globalState.cachedPanes.length > 0 ? [...globalState.cachedPanes] : getCurrentSidebarPanes();
+  const previousActivePane =
+    globalState.currentActivePaneIndex !== null
+      ? previousCachedPanes[globalState.currentActivePaneIndex] ?? null
+      : null;
+  const previousActivePaneId = previousActivePane ? getPaneIdFromPane(previousActivePane) : null;
+
+  const panes = getCurrentSidebarPanes();
+  refreshPanesElementsCache(panes);
+
+  if (panes.length === 0) {
+    globalState.currentActivePaneIndex = null;
+
+    return { panes, activePane: null, activeIndex: null };
+  }
+
+  const selectedPane =
+    panes.find(pane => (pane as HTMLElement).classList.contains('selectedPane')) ?? null;
+  const matchedPreviousPane =
+    previousActivePane && panes.includes(previousActivePane) ? previousActivePane : null;
+  const matchedPaneById =
+    !matchedPreviousPane && previousActivePaneId
+      ? panes.find(pane => getPaneIdFromPane(pane) === previousActivePaneId) ?? null
+      : null;
+  const matchedPaneByIndex = isActivePaneIndexValid(panes)
+    ? panes[globalState.currentActivePaneIndex as number] ?? null
+    : null;
+  const activePane =
+    selectedPane ?? matchedPreviousPane ?? matchedPaneById ?? matchedPaneByIndex ?? panes[0];
+  const activeIndex = panes.indexOf(activePane);
+
+  globalState.currentActivePaneIndex = activeIndex === -1 ? 0 : activeIndex;
+
+  return {
+    panes,
+    activePane,
+    activeIndex: globalState.currentActivePaneIndex,
+  };
+};
+
+const getPaneIndexesToClose = (
+  paneCount: number,
+  activeIndex: number,
+  maxTabs: number,
+  direction: 'left' | 'right'
+): number[] => {
+  const numberOfPanesToClose = Math.max(0, paneCount - maxTabs);
+  if (numberOfPanesToClose === 0) return [];
+
+  const leftIndexes = Array.from({ length: activeIndex }, (_, index) => index);
+  const rightIndexes = Array.from(
+    { length: Math.max(0, paneCount - activeIndex - 1) },
+    (_, offset) => paneCount - 1 - offset
+  );
+  const indexesForDirection = direction === 'left' ? leftIndexes : rightIndexes;
+
+  return indexesForDirection.slice(0, numberOfPanesToClose);
 };
