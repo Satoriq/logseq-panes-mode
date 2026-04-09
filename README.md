@@ -32,7 +32,7 @@
   </a>
 </p>
 
-### Dark mode
+### Dark mode (Dark mode UI colors setted up in plugin settings)
 
 <p align="center">
   <a href="https://github.com/satoriq/logseq-panes-mode/blob/main/github-assets/github-image-dark.png">
@@ -43,7 +43,6 @@
     />
   </a>
 </p>
-(Dark mode details setted up in plugin settings)
 
 ## Why
 
