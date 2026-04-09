@@ -36,6 +36,10 @@ export type PluginSettings = {
   themeDarkTabBackground: string;
   themeDarkTabActiveBackground: string;
   themeDarkTabText: string;
+  themeDarkPaneSwitcherItemBackground: string;
+  themeDarkPaneSwitcherItemBorderBottom: string;
+  themeDarkPaneSwitcherSelectedBackground: string;
+  themeDarkPaneSwitcherSelectedBorderLeft: string;
 };
 
 const defaultSettings: PluginSettings = {
@@ -72,6 +76,10 @@ const defaultSettings: PluginSettings = {
   themeDarkTabBackground: '#0d4b5d',
   themeDarkTabActiveBackground: '#06313c',
   themeDarkTabText: '#e5e7eb',
+  themeDarkPaneSwitcherItemBackground: '#023643',
+  themeDarkPaneSwitcherItemBorderBottom: '#073642',
+  themeDarkPaneSwitcherSelectedBackground: '#042e39',
+  themeDarkPaneSwitcherSelectedBorderLeft: '#2aa198',
 };
 
 const settingsSchema: SettingSchemaDesc[] = [
@@ -306,6 +314,40 @@ const settingsSchema: SettingSchemaDesc[] = [
     description: 'Text color for tabs in dark mode.',
     type: 'string',
     default: defaultSettings.themeDarkTabText,
+    inputAs: 'color',
+  },
+  {
+    key: 'themeDarkPaneSwitcherItemBackground',
+    title: 'Dark mode pane switcher item background',
+    description:
+      'Background color for pane switcher items in dark mode. Also applies to the pane switcher search background.',
+    type: 'string',
+    default: defaultSettings.themeDarkPaneSwitcherItemBackground,
+    inputAs: 'color',
+  },
+  {
+    key: 'themeDarkPaneSwitcherItemBorderBottom',
+    title: 'Dark mode pane switcher item border color',
+    description:
+      'Bottom border color for pane switcher items in dark mode. Also applies to the pane switcher search bottom border.',
+    type: 'string',
+    default: defaultSettings.themeDarkPaneSwitcherItemBorderBottom,
+    inputAs: 'color',
+  },
+  {
+    key: 'themeDarkPaneSwitcherSelectedBackground',
+    title: 'Dark mode selected pane switcher item background',
+    description: 'Background color for the selected pane switcher item in dark mode.',
+    type: 'string',
+    default: defaultSettings.themeDarkPaneSwitcherSelectedBackground,
+    inputAs: 'color',
+  },
+  {
+    key: 'themeDarkPaneSwitcherSelectedBorderLeft',
+    title: 'Dark mode selected pane switcher item left border',
+    description: 'Left border color for the selected pane switcher item in dark mode.',
+    type: 'string',
+    default: defaultSettings.themeDarkPaneSwitcherSelectedBorderLeft,
     inputAs: 'color',
   },
   {

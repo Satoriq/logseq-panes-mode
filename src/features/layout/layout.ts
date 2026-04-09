@@ -89,6 +89,10 @@ const buildDynamicStyles = (settings: PluginSettings): string => {
       --panesMode-tab-text: ${darkColors.tabText};
       --panesMode-active-pane-border-color: ${settings.activePaneOutlineColorDark};
       --panesMode-pane-border-color: ${settings.paneBorderColorDark};
+      --panesMode-pane-switcher-item-bg-dark: ${settings.themeDarkPaneSwitcherItemBackground};
+      --panesMode-pane-switcher-item-border-bottom-dark: ${settings.themeDarkPaneSwitcherItemBorderBottom};
+      --panesMode-pane-switcher-item-selected-bg-dark: ${settings.themeDarkPaneSwitcherSelectedBackground};
+      --panesMode-pane-switcher-item-selected-border-left-dark: ${settings.themeDarkPaneSwitcherSelectedBorderLeft};
     }
 
     body.panesMode-active .panesMode-tabs-container-horizontal {
