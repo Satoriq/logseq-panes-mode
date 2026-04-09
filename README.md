@@ -43,6 +43,7 @@
     />
   </a>
 </p>
+(Dark mode details setted up in plugin settings)
 
 ## Why
 
