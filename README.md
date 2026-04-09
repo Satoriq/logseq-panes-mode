@@ -164,7 +164,6 @@ Yes, but only when `'effect': true` is added to DB by the Logseq team and the DB
 
 - _It's an MVP with a new UI concept_ — Expect bugs. Most are solved by the "Sync panes order" action button or toggling the plugin off and on.
 - _Cursor disappears after editing without changing file state_ — Desync between custom UI and Logseq page state. Reopen the page or restart Logseq.
-- _Plugin doesnt work as i saw on video, logic is constantly off_ — Most likelly you have potato pc. Try to play with DOM wait coeficient in plugin settings, increase it by 0.5 till its working properly. It is temporary hack, I will replace it when have some free time.
 
 ## Contributing
 
