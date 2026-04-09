@@ -64,7 +64,7 @@ Logseq current UI is great at outlining but not perfect for further work with da
 Video illustration (click on image to go youtube):
 
 <p align="center">
-  <a href="https://youtu.be/7Bv_xHozLNQ">
+  <a href="https://youtu.be/ICbebMz188Q">
     <img
       src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/github-image-youtube.png"
       alt="Panes mode video showcase"
@@ -129,8 +129,15 @@ Video illustration (click on image to go youtube):
 
 1. Open Logseq
 2. Go to **Settings > Plugins > Marketplace**
-3. Search for **Panes Mode**
+3. Search for **Logseq Panes Mode**
 4. Click **Install**
+
+<p align="left">
+    <img
+      src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/plugin-in-marketplace.png"
+      alt="Panes mode marketplace"
+    />
+</p>
 
 ### Manual
 

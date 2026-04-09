@@ -26,7 +26,7 @@
   "logseq": {
     "id": "logseq-panes-mode",
     "icon": "./logo.svg",
-    "title": "PanesMode",
+    "title": "Logseq Panes Mode",
     "description": "A tiling window manager for Logseq's right sidebar — tabs, pane navigation, resizing, drag-and-drop reordering, projects, and extensive keyboard shortcuts."
   }
 }
