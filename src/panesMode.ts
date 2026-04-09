@@ -9,6 +9,8 @@ import {
   restoreActionButtonsToHeader,
   initCustomSidebarResize,
   cleanupCustomSidebarResize,
+  RIGHT_WINDOW_CONTROLS_CLASS,
+  syncNativeRightWindowControlsClass,
 } from './features/layout/layout';
 import { globalState, resetState } from './core/pluginGlobalState';
 import {
@@ -67,7 +69,6 @@ let panesContainerMutationsObserver: MutationObserver | null = null;
 let leftSidebarObserver: MutationObserver | null = null;
 let pendingPanesModeModeSetupInterval: ReturnType<typeof setInterval> | null = null;
 let reactivateAfterRightSidebarShown = false;
-const RIGHT_WINDOW_CONTROLS_CLASS = 'panesMode-native-right-window-controls';
 
 const main = async () => {
   await initPluginSettings();
@@ -253,10 +254,7 @@ const applyPanesModeModeUi = () => {
   applyPanesModeStyles(true);
 
   parent.document.body.classList.add('panesMode-active');
-  parent.document.body.classList.toggle(
-    RIGHT_WINDOW_CONTROLS_CLASS,
-    globalState.isWindows || globalState.isLinux
-  );
+  syncNativeRightWindowControlsClass(getMainContent()?.style.display === 'none');
 };
 
 const initializeTabsState = () => {

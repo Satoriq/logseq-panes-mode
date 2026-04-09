@@ -21,6 +21,7 @@ import {
 import type { LeftLayoutElements, ResizeState } from './layout.types';
 
 let sidebarResizeCleanup: (() => void) | null = null;
+export const RIGHT_WINDOW_CONTROLS_CLASS = 'panesMode-native-right-window-controls';
 
 // --- Styles ---
 
@@ -225,6 +226,15 @@ export const clearInjectedStyles = (): void => {
   logseq.provideStyle({ key: PLUGIN_UI_SELECTORS.customStylesKey, style: '' });
 };
 
+export const syncNativeRightWindowControlsClass = (isLeftSideHidden: boolean): void => {
+  parent.document.body.classList.toggle(
+    RIGHT_WINDOW_CONTROLS_CLASS,
+    globalState.isPanesModeModeActive &&
+      (globalState.isWindows || globalState.isLinux) &&
+      isLeftSideHidden
+  );
+};
+
 // --- Left side layout ---
 
 const getLeftSidebarWidthValue = (): number => {
@@ -294,6 +304,7 @@ export const hideLeftSide = (): void => {
   writeOriginalLeftSideWithoutBar(leftSideWithoutBar);
 
   applyLeftSideHidden(leftSide, rightSidebar, mainContent, leftSidebarWidth, isLeftSideBarOpen);
+  syncNativeRightWindowControlsClass(true);
   manageActionButtonsPosition();
 };
 
@@ -310,6 +321,7 @@ export const showLeftSide = (): void => {
     : originalWidth;
 
   applyLeftSideVisible(leftSide, rightSidebar, leftSideNewWidth, isLeftSidebarOpen);
+  syncNativeRightWindowControlsClass(false);
   manageActionButtonsPosition();
   setMainContentVisible(mainContent);
 };
