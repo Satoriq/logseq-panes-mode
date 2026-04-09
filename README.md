@@ -104,7 +104,7 @@ Video illustration (click on image to go youtube):
 | `Cmd/Ctrl+Shift+Arrow Left/Right` | Resize active pane                             |
 | `Cmd/Ctrl+G`                      | Jump to bottom of pane                         |
 | `Cmd/Ctrl+U`                      | Jump to top of pane                            |
-| `Cmd/Ctrl+Shift+Enter`            | Focus text in active pane                      |
+| `Cmd/Ctrl+Shift+D`                | Focus text in active pane                      |
 | `Cmd/Ctrl+J` / `Cmd/Ctrl+K`       | Navigate native/plugin search/selector         |
 | `Cmd/Ctrl+1-9`                    | Jump to pane by number                         |
 
