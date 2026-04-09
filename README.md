@@ -64,7 +64,7 @@ Logseq current UI is great at outlining but not perfect for further work with da
 Video illustration (click on image to go youtube):
 
 <p align="center">
-  <a href="https://youtu.be/ICbebMz188Q">
+  <a href="https://youtu.be/J97U0WmHvIk">
     <img
       src="https://raw.githubusercontent.com/satoriq/logseq-panes-mode/main/github-assets/github-image-youtube.png"
       alt="Panes mode video showcase"
