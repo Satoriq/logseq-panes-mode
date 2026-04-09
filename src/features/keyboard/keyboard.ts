@@ -15,7 +15,7 @@ import { hidePaneSwitcherModal, showPaneSwitcherModal } from '../panes/paneSwitc
 import { hideProjectsModal, showProjectsModal } from '../projects/projects';
 import { updateTabs } from '../tabs/tabs';
 import { toggleMultiColumnForPane } from '../panes/paneMultiColumn';
-import { exitIfEditing, waitForDomChanges } from '../../core/utils';
+import { exitIfEditing, isPrimaryShortcutModifierPressed, waitForDomChanges } from '../../core/utils';
 import { getPluginSettings } from '../../core/pluginSettings';
 
 // --- Module state ---
@@ -278,7 +278,7 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 const getPaneArrowHotkey = (
   e: KeyboardEvent
 ): 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | null => {
-  const isMod = e.metaKey || e.ctrlKey;
+  const isMod = isPrimaryShortcutModifierPressed(e);
   if (!isMod || e.altKey) return null;
 
   switch (e.key) {
@@ -611,7 +611,7 @@ const ensurePaletteNavigationHotkeys = (): void => {
   if (cleanupPaletteHotkeys) return;
 
   const paletteHotkeyHandler = (e: KeyboardEvent) => {
-    const isMod = e.metaKey || e.ctrlKey;
+    const isMod = isPrimaryShortcutModifierPressed(e);
     const key = e.key?.toLowerCase();
     if (!isMod || !key) return;
 
@@ -687,16 +687,30 @@ export const setupKeyboardShortcuts = async (togglePanesModeMode: () => Promise<
   ensurePaneArrowHotkeys();
 };
 
-export const preventNativeCloseShortcut = (
+export const preventNativeWindowShortcuts = (
   updateTabs: (currentPanes?: Element[]) => void
 ): (() => void) => {
   const handler = (e: KeyboardEvent) => {
-    const isMod = e.metaKey || e.ctrlKey;
-    if (isMod && e.key === 'w') {
+    const isMod = isPrimaryShortcutModifierPressed(e);
+    const key = e.key?.toLowerCase();
+    const hasOnlyMod = !e.altKey && !e.shiftKey;
+    if (!isMod || !hasOnlyMod || !key) return;
+
+    if (key === 'w') {
       e.preventDefault();
       e.stopPropagation();
       if (globalState.isPanesModeModeActive && isActivePaneIndexValid()) {
         closePaneByIndex(globalState.currentActivePaneIndex as number, updateTabs);
+      }
+
+      return;
+    }
+
+    if (key === 'q') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (globalState.isPanesModeModeActive) {
+        void handlePrevPane();
       }
     }
   };

@@ -214,11 +214,12 @@ html[data-theme='dark'] body.panesMode-active .sidebar-item-list {
 }
 
 body.panesMode-active.panesMode-native-right-window-controls {
-  --panesMode-native-right-window-controls-padding: 120px;
+  --panesMode-native-right-window-controls-padding: 130px;
 }
 
 body.panesMode-active.panesMode-native-right-window-controls #head > .r,
-body.panesMode-active.panesMode-native-right-window-controls .horizontal-tabs-action-buttons-wrapper {
+body.panesMode-active.panesMode-native-right-window-controls
+  .horizontal-tabs-action-buttons-wrapper {
   padding-right: var(--panesMode-native-right-window-controls-padding);
 }
 

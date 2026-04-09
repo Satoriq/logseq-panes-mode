@@ -1,7 +1,11 @@
 import { LOGSEQ_UI_SELECTORS, PLUGIN_UI_SELECTORS } from '../../../core/constants';
 import { getPaneTitle } from '../../../core/domUtils';
 import { globalState } from '../../../core/pluginGlobalState';
-import { debounce, waitForDomChanges } from '../../../core/utils';
+import {
+  debounce,
+  isPrimaryShortcutModifierPressed,
+  waitForDomChanges,
+} from '../../../core/utils';
 import { setActivePaneByIndex } from '../paneNavigation';
 import { createPaneSwitcherModalHTML, PANE_SWITCHER_CLASSES } from './paneSwitcherView';
 
@@ -48,7 +52,7 @@ export const initPaneSwitcherModal = (): HTMLElement => {
     const container = modal.querySelector(`.${PANE_SWITCHER_CLASSES.container}`) as HTMLElement;
     const preventLogseqBackgroundNavigation = () => {
       container.addEventListener('keydown', (e: KeyboardEvent) => {
-        const isMod = e.metaKey || e.ctrlKey;
+        const isMod = isPrimaryShortcutModifierPressed(e);
         if (
           ['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key) ||
           (isMod && (e.key === 'j' || e.key === 'k'))
@@ -75,7 +79,7 @@ export const initPaneSwitcherModal = (): HTMLElement => {
       if (!globalState.isPaneSwitcherModalVisible) return;
       const isArrowUp = e.key === 'ArrowUp';
       const isArrowDown = e.key === 'ArrowDown';
-      const isMod = e.metaKey || e.ctrlKey;
+      const isMod = isPrimaryShortcutModifierPressed(e);
       const isMetaK = isMod && e.key === 'k';
       const isMetaJ = isMod && e.key === 'j';
       const isEscape = e.key === 'Escape';

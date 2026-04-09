@@ -1,5 +1,7 @@
 import { getPluginSettings } from './pluginSettings';
 
+const isMacPlatform = /Mac/.test(navigator.platform);
+
 export function debounce<T extends (...args: any[]) => void>(func: T, delay: number) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -45,6 +47,9 @@ export const exitIfEditing = async () => {
     await logseq.Editor.exitEditingMode();
   }
 };
+
+export const isPrimaryShortcutModifierPressed = (e: KeyboardEvent): boolean =>
+  isMacPlatform ? e.metaKey : e.ctrlKey;
 
 export const showError = (message: string) => {
   logseq.UI.showMsg(`[PanesMode] ${message}`, 'error');

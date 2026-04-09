@@ -33,7 +33,10 @@ import {
 } from './features/observers/paneMutations';
 import { setupShiftClickPaneTracking } from './features/panes/shiftActions/paneShiftClick';
 import { setActivePaneByIndex, resetActiveTabIndex } from './features/panes/paneNavigation';
-import { preventNativeCloseShortcut, setupKeyboardShortcuts } from './features/keyboard/keyboard';
+import {
+  preventNativeWindowShortcuts,
+  setupKeyboardShortcuts,
+} from './features/keyboard/keyboard';
 import { setupMousePaneFocus } from './features/panes/paneFocusListeners';
 import { setupNativeDragDropListener } from './features/panes/paneNativeDnd';
 import { createTabsContainer, resetTabsState, updateTabs } from './features/tabs/tabs';
@@ -57,7 +60,7 @@ import { registerToolbarUIItems } from './features/toolbar/toolbar';
 
 let cleanupAutoPaneFocus: (() => void) | null = null;
 let cleanupNativeDragDropListener: (() => void) | null = null;
-let cleanupPreventNativeCloseShortcut: (() => void) | null = null;
+let cleanupPreventNativeWindowShortcuts: (() => void) | null = null;
 let cleanupShiftClickTracking: (() => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let panesContainerMutationsObserver: MutationObserver | null = null;
@@ -272,7 +275,7 @@ const initializeModalsAndInputs = () => {
   cleanupAutoPaneFocus = setupMousePaneFocus();
   cleanupNativeDragDropListener = setupNativeDragDropListener();
   cleanupShiftClickTracking = setupShiftClickPaneTracking();
-  cleanupPreventNativeCloseShortcut = preventNativeCloseShortcut(updateTabs);
+  cleanupPreventNativeWindowShortcuts = preventNativeWindowShortcuts(updateTabs);
 };
 
 const applyInitialPaneState = (currentPanes: Element[]) => {
@@ -395,9 +398,9 @@ const cleanupGlobalHandlers = () => {
     globalState.keyupEventHandler = null;
   }
 
-  if (cleanupPreventNativeCloseShortcut) {
-    cleanupPreventNativeCloseShortcut();
-    cleanupPreventNativeCloseShortcut = null;
+  if (cleanupPreventNativeWindowShortcuts) {
+    cleanupPreventNativeWindowShortcuts();
+    cleanupPreventNativeWindowShortcuts = null;
   }
 
   if (cleanupAutoPaneFocus) {

@@ -7,7 +7,13 @@ import {
 } from '../../core/domUtils';
 import { globalState } from '../../core/pluginGlobalState';
 import type { ProjectListItem } from './types';
-import { debounce, showError, showSuccess, waitForDomChanges } from '../../core/utils';
+import {
+  debounce,
+  isPrimaryShortcutModifierPressed,
+  showError,
+  showSuccess,
+  waitForDomChanges,
+} from '../../core/utils';
 import { EXPECTED_MUTATIONS } from '../observers/types';
 import { stopPaneOrderSync } from '../observers/paneMutations';
 import { getCurrentSidebarPanes, refreshPanesElementsCache } from '../panes/paneCache';
@@ -369,7 +375,7 @@ const attachSearchInputListeners = (modal: HTMLElement) => {
 const attachModalKeyHandlers = (modal: HTMLElement) => {
   const container = modal.querySelector(`.${PROJECTS_CLASSES.container}`) as HTMLElement;
   container.addEventListener('keydown', (e: KeyboardEvent) => {
-    const isMod = e.metaKey || e.ctrlKey;
+    const isMod = isPrimaryShortcutModifierPressed(e);
     if (
       ['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key) ||
       (isMod && (e.key === 'j' || e.key === 'k'))
@@ -438,7 +444,7 @@ const attachShowKeyHandlers = (modal: HTMLElement) => {
   modalKeydownHandler = (e: KeyboardEvent) => {
     const isArrowUp = e.key === 'ArrowUp';
     const isArrowDown = e.key === 'ArrowDown';
-    const isMod = e.metaKey || e.ctrlKey;
+    const isMod = isPrimaryShortcutModifierPressed(e);
     const isMetaK = isMod && e.key === 'k';
     const isMetaJ = isMod && e.key === 'j';
     const isEscape = e.key === 'Escape';
