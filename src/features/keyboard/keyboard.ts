@@ -699,6 +699,7 @@ export const preventNativeWindowShortcuts = (
     if (key === 'w') {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       if (globalState.isPanesModeModeActive && isActivePaneIndexValid()) {
         closePaneByIndex(globalState.currentActivePaneIndex as number, updateTabs);
       }
@@ -709,6 +710,7 @@ export const preventNativeWindowShortcuts = (
     if (key === 'q') {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       if (globalState.isPanesModeModeActive) {
         void handlePrevPane();
       }

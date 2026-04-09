@@ -1,6 +1,6 @@
 import { toolbarIcons } from './icons';
 
-const TOOLBAR_ICON_SIZE_PX = 22;
+const TOOLBAR_ICON_SIZE_PX = 20;
 
 export const registerToolbarUIItems = (): void => {
   const registerUIItem = (interfacePlace: 'toolbar', key: string, template: string) =>
@@ -20,30 +20,14 @@ export const registerToolbarUIItems = (): void => {
 };
 
 const buildToolbarButtonTemplate = (action: string, iconMarkup: string, label: string): string => {
-
   return `
       <a
-        class="actionButton"
+        class="button actionButton"
         data-on-click="${action}"
         title="${label}"
         aria-label="${label}"
-        style="
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 34px;
-          height: 32px;
-          padding: 0;
-          margin: 0;
-          border: none;
-          cursor: pointer !important;
-          font-size: 0;
-          line-height: 0;
-          box-sizing: border-box;
-          vertical-align: middle;
-        "
       >
-        <span class="actionButton-icon" aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;">${iconMarkup}</span>
+        <span class="actionButton-icon" aria-hidden="true">${iconMarkup}</span>
       </a>
     `;
 };
