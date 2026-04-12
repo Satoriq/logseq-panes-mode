@@ -156,9 +156,8 @@ npm run build
 
 ## FAQ
 
-**Will the DB version be supported?**
-
-Yes, but only when `'effect': true` is added to DB by the Logseq team and the DB version is officially released. If the project gets many requests to suport DB or installs or github stars, I will update it for DB before official release — but you'll need to install the plugin manually from GitHub.
+**Does it support DB version?**
+Yes
 
 **Known issues:**
 
