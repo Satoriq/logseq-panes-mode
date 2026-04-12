@@ -18,6 +18,27 @@ import type { CollapseOrientation, CollapsiblePane, FitContentToggleOptions } fr
 const isFitContentEnabled = (pane: HTMLElement): boolean =>
   pane.dataset.panesModeFitContent === 'true';
 
+const getVirtuosoScrollElement = (): HTMLElement | null => {
+  if (!APP_SETTINGS_CONFIG.isDBVersion) return null;
+
+  if (globalState.virtuosoScrollElement?.isConnected) {
+    return globalState.virtuosoScrollElement;
+  }
+
+  const targetDocument = parent.document ?? document;
+  const list = targetDocument.querySelector('.sidebar-item-list') as HTMLElement | null;
+  globalState.virtuosoScrollElement = list;
+
+  return list;
+};
+
+export const notifyVirtuosoScroll = (): void => {
+  const list = getVirtuosoScrollElement();
+  if (!list) return;
+
+  list.dispatchEvent(new Event('scroll'));
+};
+
 const hasStoredPaneHeight = (storedDimensions: PaneDimensions | undefined): boolean =>
   Number.isFinite(storedDimensions?.height) && (storedDimensions?.height ?? 0) > 0;
 
@@ -137,6 +158,8 @@ export function createScrollHandler(pane: Element): (e: Event) => void {
 
   return () => {
     debouncedHandler();
+
+    notifyVirtuosoScroll();
   };
 }
 

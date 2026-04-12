@@ -59,8 +59,6 @@ body.panesMode-active {
     overflow-y: auto;
     padding-bottom: 0 !important;
     resize: both;
-    contain: content;
-    content-visibility: auto;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--ls-primary-background-color, #dcdcdc) 70%, #000 30%)
       transparent;
@@ -100,6 +98,11 @@ body.panesMode-active {
       border: 3px solid transparent;
       background-clip: content-box;
     }
+  }
+
+  &:not(.panesMode-db-version) .cp__right-sidebar .sidebar-item {
+    contain: content;
+    content-visibility: auto;
   }
 
   .cp__right-sidebar .sidebar-item.panesMode-collapse-vertical.collapsed {
@@ -310,6 +313,10 @@ body.panesMode-active {
         margin-bottom: 10px;
       }
     }
+  }
+
+  &.panesMode-db-version .action-buttons--left-sidebar > .flex.items-center {
+    flex-wrap: wrap;
   }
 
   .panesMode-multicol {

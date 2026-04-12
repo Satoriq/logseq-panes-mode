@@ -14,7 +14,11 @@ import { setActivePaneByIndex } from '../panes/paneNavigation';
 import { observePaneForResize } from '../panes/paneResize';
 import { updateTabs } from '../tabs/tabs';
 import { enforceMaxTabsLimit } from '../panes/paneActions';
-import { applyPaneDimensions, enableFitContentForNewPane } from '../panes/paneLayout';
+import {
+  applyPaneDimensions,
+  enableFitContentForNewPane,
+  notifyVirtuosoScroll,
+} from '../panes/paneLayout';
 import { updatePanesOrderInStorage } from '../panes/panePersistence';
 import {
   getActivePaneElement,
@@ -337,6 +341,7 @@ const handleShiftClickPaneOpen = (
   updatePanesOrderInStorage(updatedPanes);
   updateTabs(updatedPanes);
   ensurePaneOrderAndTabsSync(updatedPanes);
+  notifyVirtuosoScroll();
   globalState.lastShiftClickHandledAt = Date.now();
   globalState.pendingShiftClick = null;
 
@@ -363,6 +368,7 @@ const handleNativeReopenExistingPane = (reorderedPaneIndex: number): boolean => 
   updatePanesOrderInStorage(updatedPanes);
   updateTabs(updatedPanes);
   ensurePaneOrderAndTabsSync(updatedPanes);
+  notifyVirtuosoScroll();
 
   return true;
 };
@@ -546,6 +552,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
           updatePanesOrderInStorage(updatedPanes);
           updateTabs(updatedPanes);
           ensurePaneOrderAndTabsSync(updatedPanes);
+          notifyVirtuosoScroll();
         }
       });
     });
@@ -699,5 +706,9 @@ const reconcileMissedPaneChange = (panesObserver: MutationObserver): void => {
     }
   } else if (updatedPanes.length > 0) {
     setActivePaneByIndex(0, updatedPanes);
+  }
+
+  if (genuinelyNewPanes.length > 0) {
+    notifyVirtuosoScroll();
   }
 };

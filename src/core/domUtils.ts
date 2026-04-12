@@ -1,4 +1,4 @@
-import { LOGSEQ_UI_SELECTORS, PLUGIN_UI_SELECTORS } from './constants';
+import { APP_SETTINGS_CONFIG, LOGSEQ_UI_SELECTORS, PLUGIN_UI_SELECTORS } from './constants';
 
 type DomQueryOptions = {
   root?: ParentNode;
@@ -13,6 +13,15 @@ const BLOCK_TEXT_SELECTORS = [
 
 const GENERIC_REFERENCE_PANE_TITLES = new Set(['block references']);
 const GENERIC_REFERENCE_PANE_DATASET_KEY = 'panesModeGenericReferencePane';
+const DB_HEADER_TITLE_READ_SELECTORS = [
+  '.sidebar-item-header .page-title > span.overflow-hidden.text-ellipsis',
+  '.sidebar-item-header .page-title > span',
+  '.sidebar-item-header .page-title',
+];
+const DB_HEADER_TITLE_WRITE_SELECTORS = [
+  '.sidebar-item-header .page-title > span.overflow-hidden.text-ellipsis',
+  '.sidebar-item-header .page-title > span',
+];
 
 const normalizePaneTitle = (value: string): string =>
   value.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -100,8 +109,43 @@ export const getMainContent = (): HTMLElement | null => {
   return queryParent<HTMLElement>(LOGSEQ_UI_SELECTORS.mainContent);
 };
 
+const getHeaderTitleElementsBySelectors = (
+  pane: Element,
+  selectors: string[]
+): HTMLElement[] => {
+  for (const selector of selectors) {
+    const titleElements = Array.from(pane.querySelectorAll<HTMLElement>(selector)).filter(el =>
+      Boolean(el.textContent?.trim())
+    );
+    if (titleElements.length > 0) return titleElements;
+  }
+
+  return [];
+};
+
+const getHeaderPaneTitleElements = (pane: Element): HTMLElement[] => {
+  if (APP_SETTINGS_CONFIG.isDBVersion) {
+    const dbTitleElements = getHeaderTitleElementsBySelectors(pane, DB_HEADER_TITLE_READ_SELECTORS);
+    if (dbTitleElements.length > 0) return dbTitleElements;
+  }
+
+  return getHeaderTitleElementsBySelectors(pane, [LOGSEQ_UI_SELECTORS.tabTitle]);
+};
+
+const getEditableHeaderPaneTitleElement = (pane: Element): HTMLElement | null => {
+  if (APP_SETTINGS_CONFIG.isDBVersion) {
+    const dbTitleElements = getHeaderTitleElementsBySelectors(
+      pane,
+      DB_HEADER_TITLE_WRITE_SELECTORS
+    );
+    if (dbTitleElements.length > 0) return dbTitleElements[0];
+  }
+
+  return pane.querySelector(LOGSEQ_UI_SELECTORS.tabTitle) as HTMLElement | null;
+};
+
 const getHeaderPaneTitleParts = (pane: Element): string[] => {
-  const titleElements = pane.querySelectorAll(LOGSEQ_UI_SELECTORS.tabTitle);
+  const titleElements = getHeaderPaneTitleElements(pane);
   if (titleElements.length === 0) return [];
 
   return Array.from(titleElements)
@@ -222,8 +266,8 @@ export const syncPaneHeaderTitle = (pane: Element): void => {
   const contentDerivedTitle = getContentDerivedPaneTitle(pane);
   if (!contentDerivedTitle) return;
 
-  const headerTitleElement = pane.querySelector(LOGSEQ_UI_SELECTORS.tabTitle) as HTMLElement | null;
-  if (!headerTitleElement || headerTitleElement.textContent === contentDerivedTitle) return;
+  const headerTitleElement = getEditableHeaderPaneTitleElement(pane);
+  if (!headerTitleElement || headerTitleElement.textContent?.trim() === contentDerivedTitle) return;
 
   headerTitleElement.textContent = contentDerivedTitle;
 };

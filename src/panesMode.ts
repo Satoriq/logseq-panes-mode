@@ -68,8 +68,20 @@ let leftSidebarObserver: MutationObserver | null = null;
 let pendingPanesModeModeSetupInterval: ReturnType<typeof setInterval> | null = null;
 let reactivateAfterRightSidebarShown = false;
 
+const detectDBVersion = async (): Promise<void> => {
+  try {
+    const isDb = await (logseq.App as any).checkCurrentIsDbGraph();
+    APP_SETTINGS_CONFIG.isDBVersion = isDb;
+    debugInfo(`Logseq graph type detected: ${isDb ? 'DB' : 'file'}`);
+  } catch {
+    APP_SETTINGS_CONFIG.isDBVersion = false;
+    debugInfo('Could not detect graph type, defaulting to file mode');
+  }
+};
+
 const main = async () => {
   await initPluginSettings();
+  await detectDBVersion();
 
   applyPanesModeStyles(false);
 
@@ -252,6 +264,7 @@ const applyPanesModeModeUi = () => {
   applyPanesModeStyles(true);
 
   parent.document.body.classList.add('panesMode-active');
+  parent.document.body.classList.toggle('panesMode-db-version', APP_SETTINGS_CONFIG.isDBVersion);
   syncNativeRightWindowControlsClass(getMainContent()?.style.display === 'none');
 };
 
@@ -313,6 +326,7 @@ const cleanupPanesModeMode = () => {
 
 const resetBodyClasses = () => {
   parent.document.body.classList.remove('panesMode-active');
+  parent.document.body.classList.remove('panesMode-db-version');
   parent.document.body.classList.remove('panesMode-sticky-headers');
   parent.document.body.classList.remove(RIGHT_WINDOW_CONTROLS_CLASS);
 };

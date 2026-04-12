@@ -100,17 +100,21 @@ const getExistingShortcuts = async (): Promise<Record<string, string | string[] 
 // --- Command palette ---
 
 const getCommandPaletteRoot = (): HTMLElement | null => {
-  const paletteRoot = parent.document.querySelector(
-    LOGSEQ_UI_SELECTORS.commandPalette
-  ) as HTMLElement | null;
-  if (!paletteRoot) return null;
-  const isHidden =
-    paletteRoot.getAttribute('aria-hidden') === 'true' ||
-    paletteRoot.style.display === 'none' ||
-    paletteRoot.clientHeight === 0 ||
-    !paletteRoot.offsetParent;
+  const selector = APP_SETTINGS_CONFIG.isDBVersion
+    ? `${LOGSEQ_UI_SELECTORS.commandPaletteDb}, ${LOGSEQ_UI_SELECTORS.commandPalette}`
+    : LOGSEQ_UI_SELECTORS.commandPalette;
+  const paletteRoots = Array.from(parent.document.querySelectorAll<HTMLElement>(selector));
 
-  return isHidden ? null : paletteRoot;
+  return (
+    paletteRoots.find(root => {
+      const isHidden =
+        root.getAttribute('aria-hidden') === 'true' ||
+        root.style.display === 'none' ||
+        root.getClientRects().length === 0;
+
+      return !isHidden;
+    }) ?? null
+  );
 };
 
 const moveCommandPaletteSelection = (direction: 'up' | 'down'): boolean => {

@@ -1,4 +1,5 @@
 // AI slop
+import { APP_SETTINGS_CONFIG } from '../../../core/constants';
 import {
   arePanesDifferent,
   getPaneIdFromPane,
@@ -10,7 +11,7 @@ import type { PendingShiftClick } from './types';
 import { waitForDomChanges } from '../../../core/utils';
 import { getCurrentSidebarPanes } from '../paneCache';
 import { setActivePaneByIndex } from '../paneNavigation';
-import { applyPaneDimensions } from '../paneLayout';
+import { applyPaneDimensions, notifyVirtuosoScroll } from '../paneLayout';
 import { updateTabs } from '../../tabs/tabs';
 import { updatePanesOrderInStorage } from '../panePersistence';
 import { enforceMaxTabsLimit } from '../paneActions';
@@ -32,15 +33,24 @@ const SHIFT_CLICK_SELECTORS = {
   block: '.bullet-container[blockid], .block-control[blockid], .block-ref[data-uuid]',
 } as const;
 
-const DEBUG_PREFIX = '[PanesMode][ShiftClick]';
-
-const SEARCH_SELECTORS = {
-  container: '.search-results',
-  item: '.transition-opacity',
-  highlightedSpan: '.ui__list-item-highlighted-span, mark',
+const DB_SHIFT_CLICK_SELECTORS = {
+  pageLink: 'a.page-ref[data-ref], a.tag[data-ref], .preview-ref-link a[data-ref]',
+  pageContainer: '.preview-ref-link, .page-reference, .inline-wrap, .full.inline-wrap',
 } as const;
 
+const DEBUG_PREFIX = '[PanesMode][ShiftClick]';
+
+const SEARCH_HIGHLIGHTED_SPAN_SELECTOR = '.ui__list-item-highlighted-span, mark';
+
 const SEARCH_SECTION_LABELS = ['pages', 'blocks', 'recents'] as const;
+
+const getSearchContainerSelector = (): string =>
+  APP_SETTINGS_CONFIG.isDBVersion ? '.cp__cmdk__modal, .search-results' : '.search-results';
+
+const getSearchItemSelector = (): string =>
+  APP_SETTINGS_CONFIG.isDBVersion
+    ? '[data-cmdk-item="true"], .transition-opacity'
+    : '.transition-opacity';
 
 type ShiftClickTarget = {
   type: PendingShiftClick['targetType'];
@@ -135,7 +145,7 @@ const getSearchItemText = (item: HTMLElement): string => {
       return extractPageNameFromText(firstLine);
     }
   }
-  const highlighted = Array.from(item.querySelectorAll(SEARCH_SELECTORS.highlightedSpan));
+  const highlighted = Array.from(item.querySelectorAll(SEARCH_HIGHLIGHTED_SPAN_SELECTOR));
   if (highlighted.length > 0) {
     const joined = highlighted
       .map(el => el.textContent?.trim() ?? '')
@@ -163,7 +173,7 @@ const getSearchBlockText = (item: HTMLElement): string => {
   const candidate = lines[lines.length - 1];
   if (candidate) return candidate;
 
-  const highlights = Array.from(item.querySelectorAll(SEARCH_SELECTORS.highlightedSpan)).filter(
+  const highlights = Array.from(item.querySelectorAll(SEARCH_HIGHLIGHTED_SPAN_SELECTOR)).filter(
     span =>
       !span.closest('.breadcrumb') &&
       !span.closest('.block-parents') &&
@@ -181,11 +191,10 @@ const getSearchBlockText = (item: HTMLElement): string => {
   return '';
 };
 const findSearchContainer = (target?: HTMLElement | null): HTMLElement | null => {
-  const direct = target?.closest(SEARCH_SELECTORS.container) as HTMLElement | null;
+  const containerSelector = getSearchContainerSelector();
+  const direct = target?.closest(containerSelector) as HTMLElement | null;
   if (direct) return direct;
-  const containers = Array.from(
-    parent.document.querySelectorAll<HTMLElement>(SEARCH_SELECTORS.container)
-  );
+  const containers = Array.from(parent.document.querySelectorAll<HTMLElement>(containerSelector));
 
   return (
     containers.find(container => container.offsetParent !== null || container.offsetHeight > 0) ??
@@ -201,7 +210,8 @@ const isEnterKey = (event: KeyboardEvent): boolean =>
   event.key === 'Return';
 
 const getSearchItems = (container: HTMLElement): { all: HTMLElement[]; leaf: HTMLElement[] } => {
-  const allItems = Array.from(container.querySelectorAll<HTMLElement>(SEARCH_SELECTORS.item));
+  const itemSelector = getSearchItemSelector();
+  const allItems = Array.from(container.querySelectorAll<HTMLElement>(itemSelector));
   if (allItems.length === 0) return { all: [], leaf: [] };
   const itemsWithText = allItems.filter(item => (item.innerText || item.textContent || '').trim());
   const baseItems = itemsWithText.length > 0 ? itemsWithText : allItems;
@@ -216,19 +226,21 @@ const getSearchItems = (container: HTMLElement): { all: HTMLElement[]; leaf: HTM
 };
 
 const findInlineOpacitySearchItem = (container?: HTMLElement | null): HTMLElement | null => {
+  const containerSelector = getSearchContainerSelector();
+  const itemSelector = getSearchItemSelector();
   const containers = container
     ? [container]
-    : Array.from(parent.document.querySelectorAll<HTMLElement>(SEARCH_SELECTORS.container));
+    : Array.from(parent.document.querySelectorAll<HTMLElement>(containerSelector));
   for (const searchContainer of containers) {
     const direct = searchContainer.querySelector<HTMLElement>(
-      `${SEARCH_SELECTORS.item}[style*="opacity: 1"], ${SEARCH_SELECTORS.item}[style*="opacity:1"]`
+      `${itemSelector}[style*="opacity: 1"], ${itemSelector}[style*="opacity:1"]`
     );
     if (direct) return direct;
     const inlineElement = searchContainer.querySelector<HTMLElement>(
       '[style*="opacity: 1"], [style*="opacity:1"]'
     );
     if (inlineElement) {
-      const closestItem = inlineElement.closest(SEARCH_SELECTORS.item) as HTMLElement | null;
+      const closestItem = inlineElement.closest(itemSelector) as HTMLElement | null;
       if (closestItem && searchContainer.contains(closestItem)) return closestItem;
     }
   }
@@ -309,7 +321,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
   }
 
   const highlightedItems = Array.from(
-    container.querySelectorAll<HTMLElement>(SEARCH_SELECTORS.highlightedSpan)
+    container.querySelectorAll<HTMLElement>(SEARCH_HIGHLIGHTED_SPAN_SELECTOR)
   )
     .map(span => findSearchItemForElement(span, container, leaf))
     .filter(Boolean) as HTMLElement[];
@@ -336,11 +348,11 @@ const findSearchItem = (target: HTMLElement, container: HTMLElement): HTMLElemen
   const normalized = findSearchItemForElement(target, container, leaf);
   if (normalized) return normalized;
 
-  if (container.contains(target) && target.querySelector(SEARCH_SELECTORS.highlightedSpan)) {
+  if (container.contains(target) && target.querySelector(SEARCH_HIGHLIGHTED_SPAN_SELECTOR)) {
     return findSearchItemForElement(target, container, leaf);
   }
 
-  const highlight = target.closest(SEARCH_SELECTORS.highlightedSpan) as HTMLElement | null;
+  const highlight = target.closest(SEARCH_HIGHLIGHTED_SPAN_SELECTOR) as HTMLElement | null;
   if (highlight) {
     const fromHighlight = findSearchItemForElement(highlight, container, leaf);
     if (fromHighlight) return fromHighlight;
@@ -380,6 +392,49 @@ const getSearchPaneTarget = (target: HTMLElement): ShiftClickTarget | null => {
   };
 };
 
+const getPageCandidatesFromElement = (element: HTMLElement | null): string[] => {
+  if (!element) return [];
+
+  const candidates = new Set<string>();
+  const addCandidate = (value: string | null | undefined) => {
+    const trimmedValue = value?.trim();
+    if (trimmedValue) {
+      candidates.add(extractPageNameFromText(trimmedValue));
+    }
+  };
+
+  addCandidate(element.getAttribute('data-ref'));
+  addCandidate(element.getAttribute('data-page'));
+  addCandidate(element.getAttribute('data-page-name'));
+  addCandidate(element.textContent);
+
+  return Array.from(candidates);
+};
+
+const getDbPageTargetElement = (target: HTMLElement): HTMLElement | null => {
+  const directPageLink = target.closest(DB_SHIFT_CLICK_SELECTORS.pageLink) as HTMLElement | null;
+  if (directPageLink) return directPageLink;
+
+  let currentElement: HTMLElement | null = target;
+  while (currentElement && currentElement !== parent.document.body) {
+    if (currentElement.matches(DB_SHIFT_CLICK_SELECTORS.pageContainer)) {
+      const descendantPageLink = currentElement.querySelector(
+        DB_SHIFT_CLICK_SELECTORS.pageLink
+      ) as HTMLElement | null;
+      if (descendantPageLink) return descendantPageLink;
+
+      const siblingPageLink = currentElement.parentElement?.querySelector(
+        DB_SHIFT_CLICK_SELECTORS.pageLink
+      ) as HTMLElement | null;
+      if (siblingPageLink) return siblingPageLink;
+    }
+
+    currentElement = currentElement.parentElement;
+  }
+
+  return null;
+};
+
 const getShiftClickTarget = (target: HTMLElement): ShiftClickTarget | null => {
   const searchTarget = getSearchPaneTarget(target);
   if (searchTarget) {
@@ -388,12 +443,18 @@ const getShiftClickTarget = (target: HTMLElement): ShiftClickTarget | null => {
     return searchTarget;
   }
 
-  const pageElement = target.closest(SHIFT_CLICK_SELECTORS.page) as HTMLElement | null;
-  const pageRef = pageElement?.getAttribute('data-ref');
-  if (pageRef) {
-    debugLog(DEBUG_PREFIX, 'page ref target', pageRef);
+  if (APP_SETTINGS_CONFIG.isDBVersion) {
+    const dbPageElement = getDbPageTargetElement(target);
+    const pageCandidates = getPageCandidatesFromElement(dbPageElement);
+    if (pageCandidates.length > 0) {
+      return { type: 'page', id: pageCandidates[0], candidates: pageCandidates };
+    }
+  }
 
-    return { type: 'page', id: pageRef, candidates: [pageRef] };
+  const pageElement = target.closest(SHIFT_CLICK_SELECTORS.page) as HTMLElement | null;
+  const pageCandidates = getPageCandidatesFromElement(pageElement);
+  if (pageCandidates.length > 0) {
+    return { type: 'page', id: pageCandidates[0], candidates: pageCandidates };
   }
 
   const blockElement = target.closest(SHIFT_CLICK_SELECTORS.block) as HTMLElement | null;
@@ -580,6 +641,7 @@ const finalizePaneReorder = (
   }
   updatePanesOrderInStorage(updatedPanes);
   updateTabs(updatedPanes);
+  notifyVirtuosoScroll();
   globalState.lastShiftClickHandledAt = Date.now();
   globalState.pendingShiftClick = null;
 };
@@ -850,23 +912,18 @@ const scheduleSearchPaneFocus = (pending: PendingSearchFocus): void => {
 };
 
 export const setupShiftClickPaneTracking = (): (() => void) => {
-  // Handles Shift+Click on page/block links
-  const handleMouseDown = (event: MouseEvent) => {
-    if (!globalState.isPanesModeModeActive) return;
-    if (!event.shiftKey || event.button !== 0) return;
-
+  const getEventTargetElement = (event: Event): HTMLElement | null => {
     const rawTarget = event.target as Element | null;
-    const target =
-      rawTarget && rawTarget.nodeType === 1 ? (rawTarget as HTMLElement) : rawTarget?.parentElement;
-    if (!target) return;
 
-    debugLog(DEBUG_PREFIX, 'shift mousedown', {
-      tag: target.tagName,
-      className: target.className,
-    });
-    const shiftTarget = getShiftClickTarget(target);
-    if (!shiftTarget) return;
+    return rawTarget && rawTarget.nodeType === 1
+      ? (rawTarget as HTMLElement)
+      : (rawTarget?.parentElement ?? null);
+  };
 
+  const setPendingShiftClickFromTarget = (
+    target: HTMLElement,
+    shiftTarget: ShiftClickTarget
+  ): void => {
     const { activePaneId, activePaneIndex } = getActivePaneContext(target);
     globalState.pendingShiftClick = {
       targetType: shiftTarget.type,
@@ -882,13 +939,39 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
 
+  const handleShiftPointerEvent = (event: MouseEvent, eventType: 'mousedown' | 'click') => {
+    if (!globalState.isPanesModeModeActive) return;
+    if (!event.shiftKey || event.button !== 0) return;
+
+    const target = getEventTargetElement(event);
+    if (!target) return;
+
+    const shiftTarget = getShiftClickTarget(target);
+    if (!shiftTarget) return;
+
+    setPendingShiftClickFromTarget(target, shiftTarget);
+  };
+
+  const handleMouseDown = (event: MouseEvent) => {
+    // DB graphs swallow the shift-mousedown on page refs, so legacy keeps mousedown
+    // while DB mode uses the shift-click path below.
+    if (APP_SETTINGS_CONFIG.isDBVersion) return;
+
+    handleShiftPointerEvent(event, 'mousedown');
+  };
+
   const handleClick = (event: MouseEvent) => {
     if (!globalState.isPanesModeModeActive) return;
-    if (event.shiftKey || event.button !== 0) return;
+    if (event.button !== 0) return;
 
-    const rawTarget = event.target as Element | null;
-    const target =
-      rawTarget && rawTarget.nodeType === 1 ? (rawTarget as HTMLElement) : rawTarget?.parentElement;
+    if (event.shiftKey) {
+      if (!APP_SETTINGS_CONFIG.isDBVersion) return;
+      handleShiftPointerEvent(event, 'click');
+
+      return;
+    }
+
+    const target = getEventTargetElement(event);
     if (!target) return;
 
     const searchTarget = getSearchPaneTarget(target);
@@ -899,14 +982,11 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
     scheduleSearchPaneFocus(pendingSearchFocus);
   };
 
-  // Handles Enter in search modal, with Shift reserved for pane reordering
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!globalState.isPanesModeModeActive) return;
     if (!isEnterKey(event)) return;
 
-    const rawTarget = event.target as Element | null;
-    const target =
-      rawTarget && rawTarget.nodeType === 1 ? (rawTarget as HTMLElement) : rawTarget?.parentElement;
+    const target = getEventTargetElement(event);
     const activeElement = parent.document.activeElement as HTMLElement | null;
     const container =
       findSearchContainer(target) ?? findSearchContainer(activeElement) ?? findSearchContainer();
@@ -952,7 +1032,6 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
 
-  // Logseq runs in iframe - parent.window captures all events
   const targetWindow = parent.window ?? window;
   targetWindow.addEventListener('mousedown', handleMouseDown, true);
   targetWindow.addEventListener('click', handleClick, true);

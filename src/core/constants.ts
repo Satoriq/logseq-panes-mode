@@ -18,6 +18,7 @@ export const LOGSEQ_UI_SELECTORS = {
   tabTitle: '.sidebar-item-header div.ml-1:not(.text-sm)',
   paneContentWrapper: '.content',
   commandPalette: '.ui__modal-panel',
+  commandPaletteDb: '.cp__cmdk__modal',
   rightSidebarContainer: '#right-sidebar-container',
   rightSidebar: '#right-sidebar',
   leftSidebar: '#left-sidebar',
@@ -38,6 +39,7 @@ export const PLUGIN_UI_SELECTORS = {
 export const APP_SETTINGS_CONFIG = {
   defaultMaxTabs: 5,
   isVerticalTabs: false,
+  isDBVersion: false,
   activePaneScrollOverflowBuffer: 10,
   activeTabOverflowCoefficient: 0.35,
   moreButtonActivationProximityPx: 200,
