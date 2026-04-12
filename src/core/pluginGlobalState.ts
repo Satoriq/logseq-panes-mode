@@ -1,7 +1,7 @@
 import { APP_SETTINGS_CONFIG } from './constants';
-import type { PendingShiftClick } from './PendingShiftClick';
 import type { ProjectListItem } from '../features/projects/types';
 import type { ExpectedMutation } from '../features/observers/types';
+import type { PendingShiftClick } from '../features/panes/shiftActions/types';
 
 export type GlobalState = {
   isPanesModeModeActive: boolean;

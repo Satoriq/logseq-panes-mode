@@ -1,5 +1,6 @@
 // Agents generated
 import { STORAGE_KEYS, LOCAL_STORAGE_SAVINGS_LIMITS } from './constants';
+import { debugError, debugInfo } from './logger';
 import { showError } from './utils';
 
 export type PaneDimensions = { width: number; height?: number };
@@ -132,14 +133,14 @@ const updateRecordStorage = <T>(
     updater(allValues);
     persistRecord<T>(key, allValues);
   } catch (error) {
-    console.error(errorMessage, error);
+    debugError(errorMessage, error);
     showError(errorMessage);
   }
 };
 
 const logStorageTrim = (key: string, originalSize: number, trimmedSize: number): void => {
   if (originalSize <= trimmedSize) return;
-  console.info(
+  debugInfo(
     `[PanesMode][Task1] Trimmed ${originalSize - trimmedSize} entries from ${key} (kept ${trimmedSize})`
   );
 };

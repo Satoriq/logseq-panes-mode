@@ -15,15 +15,16 @@ import { hidePaneSwitcherModal, showPaneSwitcherModal } from '../panes/paneSwitc
 import { hideProjectsModal, showProjectsModal } from '../projects/projects';
 import { updateTabs } from '../tabs/tabs';
 import { toggleMultiColumnForPane } from '../panes/paneMultiColumn';
-import { exitIfEditing, isPrimaryShortcutModifierPressed, waitForDomChanges } from '../../core/utils';
+import {
+  exitIfEditing,
+  isPrimaryShortcutModifierPressed,
+  waitForDomChanges,
+} from '../../core/utils';
+import { debugInfo } from '../../core/logger';
 import { getPluginSettings } from '../../core/pluginSettings';
-
-// --- Module state ---
 
 let cleanupPaletteHotkeys: (() => void) | null = null;
 let cleanupPaneArrowHotkeys: (() => void) | null = null;
-
-// --- Shortcut registration helpers ---
 
 const isBindingAlreadyRegistered = (
   commandKey: string,
@@ -85,7 +86,7 @@ const createShortcutRegistrar = (
         });
       }
     } catch (err: any) {
-      console.info(`[PanesMode] Skipping duplicate shortcut ${binding}:`, err?.message ?? err);
+      debugInfo(`[PanesMode] Skipping duplicate shortcut ${binding}:`, err?.message ?? err);
     }
   };
 };
@@ -421,7 +422,7 @@ const logDebugStateAndPanes = () => {
     collapsed: pane.classList.contains('collapsed'),
     className: (pane as HTMLElement).className,
   }));
-  console.info('[PanesMode] Debug state', {
+  debugInfo('[PanesMode] Debug state', {
     globalState: { ...globalState },
     panes: paneSummaries,
     rawPanes: panes,
@@ -445,7 +446,7 @@ const logLocalStorage = () => {
 
     return acc;
   }, {});
-  console.info(`[PanesMode] Local storage (${keys.length})`, entries);
+  debugInfo(`[PanesMode] Local storage (${keys.length})`, entries);
 };
 
 // --- Shortcut group registrations ---
@@ -510,8 +511,6 @@ const registerPaneManagementShortcuts = (
     'mod+shift+m',
     toggleMultiColumnForActivePane
   );
-  // Arrow resize shortcuts are handled by the capture-phase keydown listener below.
-  // Registering them with Logseq causes false self-conflicts in the shortcut UI.
   registerShortcut(
     'panesMode.resizeUp',
     'Scroll active pane up',

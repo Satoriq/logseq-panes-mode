@@ -1,4 +1,5 @@
 import { STORAGE_KEYS, LOCAL_STORAGE_SAVINGS_LIMITS } from '../../core/constants';
+import { debugError, debugWarn } from '../../core/logger';
 import type { ProjectData } from './types';
 import {
   PaneDimensions,
@@ -37,7 +38,7 @@ export const writeProjectsToLocalStorage = (projects: ProjectsRecord): void => {
     const trimmed = trimProjectsRecord(projects);
     localStorage.setItem(STORAGE_KEYS.projects, JSON.stringify(trimmed));
   } catch (error) {
-    console.error('[PanesMode][Projects] Failed to write to localStorage:', error);
+    debugError('[PanesMode][Projects] Failed to write to localStorage:', error);
   }
 };
 
@@ -61,7 +62,7 @@ export const writeProjectsToFileStorage = async (projects: ProjectsRecord): Prom
     const trimmed = trimProjectsRecord(projects);
     await logseq.FileStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(trimmed));
   } catch (error) {
-    console.error('[PanesMode][Projects] Failed to write to FileStorage:', error);
+    debugError('[PanesMode][Projects] Failed to write to FileStorage:', error);
   }
 };
 
@@ -115,7 +116,7 @@ export const captureCurrentPaneState = (): Omit<
 export const saveProject = async (name: string): Promise<string | null> => {
   const paneState = captureCurrentPaneState();
   if (paneState.panesOrder.length === 0) {
-    console.warn('[PanesMode][Projects] Cannot save empty project');
+    debugWarn('[PanesMode][Projects] Cannot save empty project');
 
     return null;
   }

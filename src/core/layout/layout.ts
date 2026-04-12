@@ -1,5 +1,5 @@
-import { APP_SETTINGS_CONFIG, PLUGIN_UI_SELECTORS } from '../../core/constants';
-import { PluginSettings, getPluginSettings } from '../../core/pluginSettings';
+import { APP_SETTINGS_CONFIG, PLUGIN_UI_SELECTORS } from '../constants';
+import { PluginSettings, getPluginSettings } from '../pluginSettings';
 import {
   getLeftContainer,
   getLeftSidebar,
@@ -7,21 +7,31 @@ import {
   getRightSidebar,
   getRightSidebarContainer,
   getTabsContainer,
-} from '../../core/domUtils';
-import { globalState } from '../../core/pluginGlobalState';
-import { waitForDomChanges } from '../../core/utils';
-import {
-  readOriginalLeftSideWithoutBar,
-  writeOriginalLeftSideWithoutBar,
-} from '../../core/storage';
-import {
-  panesModeStyles as fullPanesModeStyles,
-  panesModeBaseStyles as basePanesModeStyles,
-} from '../../styles';
+} from '../domUtils';
+import { globalState } from '../pluginGlobalState';
+import { debugWarn } from '../logger';
+import { waitForDomChanges } from '../utils';
+import { readOriginalLeftSideWithoutBar, writeOriginalLeftSideWithoutBar } from '../storage';
+import layoutStyles from './layout.scss';
+import tabsStyles from '../../features/tabs/tabs.scss';
+import paneSwitcherStyles from '../../features/panes/paneSwitcher/paneSwitcher.scss';
+import projectsStyles from '../../features/projects/projects.scss';
+import toolbarStyles from '../../features/toolbar/toolbar.scss';
 import type { LeftLayoutElements, ResizeState } from './layout.types';
 
 let sidebarResizeCleanup: (() => void) | null = null;
 export const RIGHT_WINDOW_CONTROLS_CLASS = 'panesMode-native-right-window-controls';
+
+const panesModeBaseStyles = [tabsStyles, paneSwitcherStyles, projectsStyles, toolbarStyles].join(
+  '\n'
+);
+const panesModeStyles = [
+  layoutStyles,
+  tabsStyles,
+  paneSwitcherStyles,
+  projectsStyles,
+  toolbarStyles,
+].join('\n');
 
 // --- Styles ---
 
@@ -218,7 +228,7 @@ const buildDynamicStyles = (settings: PluginSettings): string => {
 export const applyPanesModeStyles = (includeLayoutStyles = true): void => {
   const settings = getPluginSettings();
   const dynamicStyles = buildDynamicStyles(settings);
-  const baseStyles = includeLayoutStyles ? fullPanesModeStyles : basePanesModeStyles;
+  const baseStyles = includeLayoutStyles ? panesModeStyles : panesModeBaseStyles;
 
   logseq.provideStyle({
     key: PLUGIN_UI_SELECTORS.customStylesKey,
@@ -592,7 +602,7 @@ export const setupCustomSidebarResize = (): (() => void) => {
   const separator = rightSidebar?.querySelector('.resizer[role="separator"]') as HTMLElement | null;
 
   if (!separator || !rightSidebar) {
-    console.warn('[PanesMode] Could not find sidebar separator for custom resize');
+    debugWarn('[PanesMode] Could not find sidebar separator for custom resize');
 
     return () => {};
   }

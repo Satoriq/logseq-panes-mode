@@ -1,6 +1,7 @@
 import { APP_SETTINGS_CONFIG } from '../../core/constants';
+import { debugLog, debugWarn } from '../../core/logger';
 import { globalState } from '../../core/pluginGlobalState';
-import { PendingShiftClick } from '../../core/PendingShiftClick';
+import type { PendingShiftClick } from '../panes/shiftActions/types';
 import { waitForDomChanges } from '../../core/utils';
 import {
   arePanesDifferent,
@@ -217,7 +218,7 @@ const isLogseqReorderingMutation = (mutations: MutationRecord[]) => {
     if (mutation.type !== 'childList') return;
 
     mutation.addedNodes.forEach((node: HTMLElement) => {
-      console.log('Added node in mutation:', node);
+      debugLog('Added node in mutation:', node);
       if (node.classList?.contains('sidebar-item')) {
         addedPanes.push(node);
       }
@@ -370,14 +371,14 @@ const handleNativeReopenExistingPane = (reorderedPaneIndex: number): boolean => 
 export const createPanesMutationObserver = (resizeObserver: ResizeObserver): MutationObserver => {
   moduleResizeObserver = resizeObserver;
   const panesContainerMutationsObserver = new MutationObserver(mutations => {
-    console.log('Panes mutations detected:', mutations);
+    debugLog('Panes mutations detected:', mutations);
     globalState.lastPanesMutationAt = Date.now();
     const pluginSettings = getPluginSettings();
 
-    console.log('Cached panes before mutation handling:', globalState.cachedPanes);
+    debugLog('Cached panes before mutation handling:', globalState.cachedPanes);
     const currentSidebarPanes = getCurrentSidebarPanes();
-    console.log('Current sidebar panes start of mutation handling:', currentSidebarPanes);
-    console.log('Global state before mutation handling:', globalState);
+    debugLog('Current sidebar panes start of mutation handling:', currentSidebarPanes);
+    debugLog('Global state before mutation handling:', globalState);
 
     const hasSidebarPanesChanged =
       currentSidebarPanes.length !== globalState.cachedPanes.length ||
@@ -391,10 +392,10 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
     if (hasSidebarPanesChanged) {
       updatePanesOrderInStorage(currentSidebarPanes);
     }
-    console.log(globalState.expectedMutations, 'Expected mutations at start of mutation handling');
+    debugLog(globalState.expectedMutations, 'Expected mutations at start of mutation handling');
     if (globalState.expectedMutations.length > 0) {
       const expectedMutation = globalState.expectedMutations.shift();
-      console.log('Expected mutation detected:', expectedMutation);
+      debugLog('Expected mutation detected:', expectedMutation);
       refreshPanesElementsCache(currentSidebarPanes);
       if (expectedMutation === EXPECTED_MUTATIONS.dragAndDropItemReordering) {
         updateTabs(currentSidebarPanes);
@@ -454,7 +455,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
       ) {
         const container = getScrollablePanesContainer();
         if (container) {
-          console.log('Ignoring native reordering after shift click');
+          debugLog('Ignoring native reordering after shift click');
           restoreCachedPaneOrder(container);
           ensurePaneOrderAndTabsSync(getCurrentSidebarPanes(container));
         }
@@ -462,7 +463,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
 
         return;
       }
-      console.log('mutations', mutations);
+      debugLog('mutations', mutations);
       const reorderedPane = mutations
         .flatMap(mutation => Array.from(mutation.addedNodes))
         .find(node => {
@@ -473,7 +474,7 @@ export const createPanesMutationObserver = (resizeObserver: ResizeObserver): Mut
           );
         }) as HTMLElement | undefined;
 
-      console.log('reorderedPane', reorderedPane);
+      debugLog('reorderedPane', reorderedPane);
       const reorderedPaneIndex = globalState.cachedPanes.indexOf(reorderedPane);
 
       const handled = handleNativeReopenExistingPane(reorderedPaneIndex);
@@ -581,7 +582,7 @@ export const stopContainerWatchdog = (): void => {
 const attachPanesObserver = (panesObserver: MutationObserver): HTMLElement | null => {
   const panesContainer = getScrollablePanesContainer();
   if (!panesContainer) {
-    console.warn('Panes container not found, skipping mutation observer setup.');
+    debugWarn('Panes container not found, skipping mutation observer setup.');
 
     return null;
   }
@@ -625,7 +626,7 @@ const reconcileMissedPaneChange = (panesObserver: MutationObserver): void => {
   const currentPanes = getCurrentSidebarPanes(currentContainer);
   if (!arePanesDifferent(globalState.cachedPanes, currentPanes)) return;
 
-  console.log('[PanesMode] Watchdog detected pane change missed by observer', {
+  debugLog('[PanesMode] Watchdog detected pane change missed by observer', {
     cached: globalState.cachedPanes.length,
     current: currentPanes.length,
   });

@@ -11,13 +11,14 @@ import {
   cleanupCustomSidebarResize,
   RIGHT_WINDOW_CONTROLS_CLASS,
   syncNativeRightWindowControlsClass,
-} from './features/layout/layout';
+} from './core/layout/layout';
 import { globalState, resetState } from './core/pluginGlobalState';
 import {
   initPluginSettings,
   onSettingsUpdated,
   resetSettingsToDefaults,
 } from './core/pluginSettings';
+import { debugError, debugInfo } from './core/logger';
 import { showSuccess } from './core/utils';
 import { applyInitialPanesOrder } from './features/panes/paneOrdering';
 import {
@@ -35,10 +36,7 @@ import {
 } from './features/observers/paneMutations';
 import { setupShiftClickPaneTracking } from './features/panes/shiftActions/paneShiftClick';
 import { setActivePaneByIndex, resetActiveTabIndex } from './features/panes/paneNavigation';
-import {
-  preventNativeWindowShortcuts,
-  setupKeyboardShortcuts,
-} from './features/keyboard/keyboard';
+import { preventNativeWindowShortcuts, setupKeyboardShortcuts } from './features/keyboard/keyboard';
 import { setupMousePaneFocus } from './features/panes/paneFocusListeners';
 import { setupNativeDragDropListener } from './features/panes/paneNativeDnd';
 import { createTabsContainer, resetTabsState, updateTabs } from './features/tabs/tabs';
@@ -86,7 +84,7 @@ const main = async () => {
   registerModelHandlers(resetSettings);
   registerBeforeUnload();
 
-  console.info('PanesMode plugin fully loaded and ready.');
+  debugInfo('PanesMode plugin fully loaded and ready.');
 };
 
 const createResetSettingsHandler = () => {
@@ -296,7 +294,7 @@ const setupPaneObservers = (currentPanes: Element[]) => {
 
 const cleanupPanesModeMode = () => {
   clearPendingPanesModeModeSetup();
-  console.info('Cleaning up PanesMode...');
+  debugInfo('Cleaning up PanesMode...');
 
   resetMultiColumnLayout();
   applyPanesModeStyles(false);
@@ -310,7 +308,7 @@ const cleanupPanesModeMode = () => {
   cleanupGlobalHandlers();
 
   resetState();
-  console.info('PanesMode cleanup complete.');
+  debugInfo('PanesMode cleanup complete.');
 };
 
 const resetBodyClasses = () => {
@@ -449,4 +447,6 @@ const rebuildTabsForOrientationChange = () => {
   manageActionButtonsPosition();
 };
 
-logseq.ready(main).catch(console.error);
+logseq.ready(main).catch(error => {
+  debugError(error);
+});

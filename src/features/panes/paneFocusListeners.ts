@@ -1,4 +1,5 @@
 import { globalState, isActivePaneIndexValid } from '../../core/pluginGlobalState';
+import { debugError } from '../../core/logger';
 import { setActivePaneByIndex } from './paneNavigation';
 
 const PANE_FOCUS_SELECTORS = {
@@ -11,7 +12,7 @@ export const setupMousePaneFocus = (): (() => void) => {
     PANE_FOCUS_SELECTORS.panesContainer
   ) as HTMLElement | null;
   if (!panesContainer) {
-    console.error('Could not find panes container for mousedown listener.');
+    debugError('Could not find panes container for mousedown listener.');
 
     return () => {};
   }

@@ -4,6 +4,7 @@ import { globalState } from './pluginGlobalState';
 
 export type PluginSettings = {
   domWaitCoefficient: number;
+  enableDebugingConsoles: boolean;
   movePaneLeftShortcut: string;
   movePaneRightShortcut: string;
   maxTabs: number;
@@ -44,6 +45,7 @@ export type PluginSettings = {
 
 const defaultSettings: PluginSettings = {
   domWaitCoefficient: 1,
+  enableDebugingConsoles: false,
   movePaneLeftShortcut: 'mod+shift+h',
   movePaneRightShortcut: 'mod+shift+l',
   maxTabs: APP_SETTINGS_CONFIG.defaultMaxTabs,
@@ -402,6 +404,20 @@ const settingsSchema: SettingSchemaDesc[] = [
       'Multiplier for internal DOM wait delays. Increase it in 0.5 steps if the plugin behaves inconsistently on slower machines.',
     type: 'number',
     default: defaultSettings.domWaitCoefficient,
+  },
+  {
+    key: 'debugHeading',
+    title: 'Debug',
+    description: 'Optional troubleshooting output.',
+    type: 'heading',
+    default: null,
+  },
+  {
+    key: 'enableDebugingConsoles',
+    title: 'Enable debuging consoles',
+    description: 'If enabled, PanesMode writes internal debug output to the browser console.',
+    type: 'boolean',
+    default: defaultSettings.enableDebugingConsoles,
   },
 ];
 

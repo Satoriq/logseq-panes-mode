@@ -4,8 +4,9 @@ import {
   getPaneIdFromPane,
   isElementVerticallyInViewport,
 } from '../../../core/domUtils';
+import { debugLog } from '../../../core/logger';
 import { globalState } from '../../../core/pluginGlobalState';
-import { PendingShiftClick } from '../../../core/PendingShiftClick';
+import type { PendingShiftClick } from './types';
 import { getCurrentSidebarPanes } from '../paneCache';
 import { EXPECTED_MUTATIONS } from '../../observers/types';
 
@@ -92,7 +93,7 @@ const findPaneByFirstBlockText = (panes: Element[], queries: string[]): Element 
     }
   }
 
-  console.log(DEBUG_PREFIX, 'search block no match', {
+  debugLog(DEBUG_PREFIX, 'search block no match', {
     queries,
     normalizedQueries,
     paneFirstBlocks: paneFirstBlocks.map(item => ({

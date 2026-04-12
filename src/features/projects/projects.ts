@@ -1,5 +1,11 @@
 import { PLUGIN_UI_SELECTORS } from '../../core/constants';
 import {
+  debugGroupCollapsed,
+  debugGroupEnd,
+  debugLog,
+  debugWarn,
+} from '../../core/logger';
+import {
   getPaneIdFromPane,
   getParentElementById,
   getRightSidebarContainer,
@@ -81,11 +87,11 @@ const logProjectPanesForOpen = (projectId: string, project: ProjectListItem['dat
     collapseOrientation: project.paneCollapseOrientation[pageId] ?? null,
   }));
 
-  console.groupCollapsed(`[PanesMode][Projects] Opening panes for project "${project.name}"`);
-  console.log('projectId:', projectId);
-  console.log('project:', project);
-  console.log('panes:', panes);
-  console.groupEnd();
+  debugGroupCollapsed(`[PanesMode][Projects] Opening panes for project "${project.name}"`);
+  debugLog('projectId:', projectId);
+  debugLog('project:', project);
+  debugLog('panes:', panes);
+  debugGroupEnd();
 };
 
 const isUuidLike = (value: string): boolean => {
@@ -111,7 +117,7 @@ const resolveProjectPaneTarget = async (savedPaneId: string): Promise<string | n
       page?.uuid ?? page?.id ?? page?.originalName ?? page?.name ?? trimmedPaneId;
 
     if (resolvedPaneId !== trimmedPaneId) {
-      console.log('[PanesMode][Projects] Resolved saved pane reference', {
+      debugLog('[PanesMode][Projects] Resolved saved pane reference', {
         savedPaneId: trimmedPaneId,
         resolvedPaneId,
       });
@@ -119,7 +125,7 @@ const resolveProjectPaneTarget = async (savedPaneId: string): Promise<string | n
 
     return resolvedPaneId;
   } catch (error) {
-    console.warn('[PanesMode][Projects] Failed to resolve saved pane reference', {
+    debugWarn('[PanesMode][Projects] Failed to resolve saved pane reference', {
       savedPaneId: trimmedPaneId,
       error,
     });
@@ -249,7 +255,7 @@ const openProjectPanes = async (paneIds: string[]) => {
     try {
       const resolvedPaneId = await resolveProjectPaneTarget(savedPaneId);
       if (!resolvedPaneId) {
-        console.warn('[PanesMode][Projects] Skipping empty saved pane reference', { savedPaneId });
+        debugWarn('[PanesMode][Projects] Skipping empty saved pane reference', { savedPaneId });
         continue;
       }
 
@@ -259,7 +265,7 @@ const openProjectPanes = async (paneIds: string[]) => {
         await waitForDomChanges(undefined, 0.1);
       }
     } catch (err) {
-      console.warn(`[PanesMode][Projects] Failed to open pane ${savedPaneId}:`, err);
+      debugWarn(`[PanesMode][Projects] Failed to open pane ${savedPaneId}:`, err);
     }
   }
 

@@ -4,8 +4,9 @@ import {
   getPaneIdFromPane,
   getScrollablePanesContainer,
 } from '../../../core/domUtils';
+import { debugLog, debugWarn } from '../../../core/logger';
 import { globalState, isActivePaneIndexValid } from '../../../core/pluginGlobalState';
-import { PendingShiftClick } from '../../../core/PendingShiftClick';
+import type { PendingShiftClick } from './types';
 import { waitForDomChanges } from '../../../core/utils';
 import { getCurrentSidebarPanes } from '../paneCache';
 import { setActivePaneByIndex } from '../paneNavigation';
@@ -256,7 +257,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
   const inlineSelected = findInlineOpacitySearchItem(container) ?? findInlineOpacitySearchItem();
   if (inlineSelected) {
     const inlineContainer = findSearchContainer(inlineSelected) ?? container;
-    console.log(DEBUG_PREFIX, 'search selection from inline opacity', {
+    debugLog(DEBUG_PREFIX, 'search selection from inline opacity', {
       opacity: getOpacityValue(inlineSelected),
       sectionType: getSearchSectionType(inlineSelected, inlineContainer),
     });
@@ -270,7 +271,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
   const activeElement = parent.document.activeElement as HTMLElement | null;
   const fromActive = findSearchItemForElement(activeElement, container, leaf);
   if (fromActive) {
-    console.log(DEBUG_PREFIX, 'search selection from active element', {
+    debugLog(DEBUG_PREFIX, 'search selection from active element', {
       opacity: getOpacityValue(fromActive),
       sectionType: getSearchSectionType(fromActive, container),
     });
@@ -281,7 +282,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
   const classOpacityItem = all.find(item => item.classList.contains('opacity-100'));
   if (classOpacityItem) {
     const resolvedItem = leaf.find(item => classOpacityItem.contains(item)) ?? classOpacityItem;
-    console.log(DEBUG_PREFIX, 'search selection from opacity-100 class', {
+    debugLog(DEBUG_PREFIX, 'search selection from opacity-100 class', {
       opacity: getOpacityValue(resolvedItem),
       sectionType: getSearchSectionType(resolvedItem, container),
     });
@@ -299,7 +300,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
     }
   });
   if (maxOpacityItem) {
-    console.log(DEBUG_PREFIX, 'search selection from max opacity', {
+    debugLog(DEBUG_PREFIX, 'search selection from max opacity', {
       opacity: maxOpacityValue,
       sectionType: getSearchSectionType(maxOpacityItem, container),
     });
@@ -314,7 +315,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
     .filter(Boolean) as HTMLElement[];
   const highlightedSelected = highlightedItems[0];
   if (highlightedSelected) {
-    console.log(DEBUG_PREFIX, 'search selection from highlights', {
+    debugLog(DEBUG_PREFIX, 'search selection from highlights', {
       opacity: getOpacityValue(highlightedSelected),
       sectionType: getSearchSectionType(highlightedSelected, container),
     });
@@ -322,7 +323,7 @@ const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
     return highlightedSelected;
   }
 
-  console.log(DEBUG_PREFIX, 'search selection fallback', {
+  debugLog(DEBUG_PREFIX, 'search selection fallback', {
     opacity: getOpacityValue(leaf[0]),
     sectionType: getSearchSectionType(leaf[0], container),
   });
@@ -382,7 +383,7 @@ const getSearchPaneTarget = (target: HTMLElement): ShiftClickTarget | null => {
 const getShiftClickTarget = (target: HTMLElement): ShiftClickTarget | null => {
   const searchTarget = getSearchPaneTarget(target);
   if (searchTarget) {
-    console.log(DEBUG_PREFIX, 'search target', searchTarget);
+    debugLog(DEBUG_PREFIX, 'search target', searchTarget);
 
     return searchTarget;
   }
@@ -390,7 +391,7 @@ const getShiftClickTarget = (target: HTMLElement): ShiftClickTarget | null => {
   const pageElement = target.closest(SHIFT_CLICK_SELECTORS.page) as HTMLElement | null;
   const pageRef = pageElement?.getAttribute('data-ref');
   if (pageRef) {
-    console.log(DEBUG_PREFIX, 'page ref target', pageRef);
+    debugLog(DEBUG_PREFIX, 'page ref target', pageRef);
 
     return { type: 'page', id: pageRef, candidates: [pageRef] };
   }
@@ -398,12 +399,12 @@ const getShiftClickTarget = (target: HTMLElement): ShiftClickTarget | null => {
   const blockElement = target.closest(SHIFT_CLICK_SELECTORS.block) as HTMLElement | null;
   const blockId = blockElement?.getAttribute('blockid') ?? blockElement?.getAttribute('data-uuid');
   if (blockId) {
-    console.log(DEBUG_PREFIX, 'block target', blockId);
+    debugLog(DEBUG_PREFIX, 'block target', blockId);
 
     return { type: 'block', id: blockId, candidates: [blockId] };
   }
 
-  console.log(DEBUG_PREFIX, 'no target match', {
+  debugLog(DEBUG_PREFIX, 'no target match', {
     tag: target.tagName,
     className: target.className,
   });
@@ -489,7 +490,7 @@ const focusPaneForSearchTarget = (pending: PendingSearchFocus): boolean => {
   if (!container) return false;
   const currentPanes = getCurrentSidebarPanes(container);
   if (!areCurrentPanesSynced(currentPanes)) {
-    console.log(DEBUG_PREFIX, 'skip search focus while panes are mutating', {
+    debugLog(DEBUG_PREFIX, 'skip search focus while panes are mutating', {
       targetType: pending.targetType,
       targetId: pending.targetId,
       paneCount: currentPanes.length,
@@ -509,7 +510,7 @@ const focusPaneForSearchTarget = (pending: PendingSearchFocus): boolean => {
       currentPanes
     ) ?? getFocusedPaneFromDocument(currentPanes);
   if (!targetPane) {
-    console.log(DEBUG_PREFIX, 'search focus target pane not found', {
+    debugLog(DEBUG_PREFIX, 'search focus target pane not found', {
       targetType: pending.targetType,
       targetId: pending.targetId,
       targetCandidates: pending.targetCandidates,
@@ -522,7 +523,7 @@ const focusPaneForSearchTarget = (pending: PendingSearchFocus): boolean => {
   const targetIndex = currentPanes.indexOf(targetPane);
   if (targetIndex === -1) return false;
 
-  console.log(DEBUG_PREFIX, 'focus pane from search', {
+  debugLog(DEBUG_PREFIX, 'focus pane from search', {
     targetType: pending.targetType,
     targetId: pending.targetId,
     targetPaneId: getPaneIdFromPane(targetPane),
@@ -547,7 +548,7 @@ const finalizePaneReorder = (
     options.baseOrder ?? (shouldUseCachedOrder ? globalState.cachedPanes : currentPanes);
   const desiredOrder = getDesiredOrder(targetPane, activePane, baseOrder);
   if (!desiredOrder) {
-    console.log(DEBUG_PREFIX, 'desired order not found', {
+    debugLog(DEBUG_PREFIX, 'desired order not found', {
       targetPaneId: getPaneIdFromPane(targetPane),
     });
     globalState.pendingShiftClick = null;
@@ -555,7 +556,7 @@ const finalizePaneReorder = (
     return;
   }
   if (!arePanesDifferent(desiredOrder, currentPanes)) {
-    console.log(DEBUG_PREFIX, 'pane already in desired position');
+    debugLog(DEBUG_PREFIX, 'pane already in desired position');
     globalState.pendingShiftClick = null;
 
     return;
@@ -565,7 +566,7 @@ const finalizePaneReorder = (
   }
   const updatedPanes = reorderPaneNextToActive(targetPane, activePane, container);
   if (!updatedPanes) {
-    console.log(DEBUG_PREFIX, 'reorder failed', {
+    debugLog(DEBUG_PREFIX, 'reorder failed', {
       targetPaneId: getPaneIdFromPane(targetPane),
     });
     globalState.pendingShiftClick = null;
@@ -592,7 +593,7 @@ const tryReorderByActivePane = (
   const previousActive = resolveActivePaneFromPending(pending, currentPanes);
   if (!activePaneNow || !previousActive || activePaneNow === previousActive) return false;
   if (!globalState.cachedPanes.includes(activePaneNow)) return false;
-  console.log(DEBUG_PREFIX, 'fallback reorder by active pane', {
+  debugLog(DEBUG_PREFIX, 'fallback reorder by active pane', {
     activePaneId: getPaneIdFromPane(activePaneNow),
     previousActiveId: getPaneIdFromPane(previousActive),
   });
@@ -603,7 +604,7 @@ const tryReorderByActivePane = (
 
 const resolveBlockTargetViaLogseq = async (pending: PendingShiftClick): Promise<boolean> => {
   if (!logseq?.Editor?.getBlock) {
-    console.log(DEBUG_PREFIX, 'logseq Editor API unavailable for block resolve');
+    debugLog(DEBUG_PREFIX, 'logseq Editor API unavailable for block resolve');
 
     return false;
   }
@@ -617,7 +618,7 @@ const resolveBlockTargetViaLogseq = async (pending: PendingShiftClick): Promise<
       pageName = typeof page === 'string' ? page : (page?.originalName ?? page?.name ?? pageName);
     }
     if (!pageName) {
-      console.log(DEBUG_PREFIX, 'block resolve missing page name', { blockId: pending.targetId });
+      debugLog(DEBUG_PREFIX, 'block resolve missing page name', { blockId: pending.targetId });
 
       return false;
     }
@@ -631,7 +632,7 @@ const resolveBlockTargetViaLogseq = async (pending: PendingShiftClick): Promise<
       targetCandidates: pageCandidates,
     };
     globalState.pendingShiftClick = updatedPending;
-    console.log(DEBUG_PREFIX, 'block resolved to page', {
+    debugLog(DEBUG_PREFIX, 'block resolved to page', {
       blockId: pending.targetId,
       pageName,
     });
@@ -649,7 +650,7 @@ const resolveBlockTargetViaLogseq = async (pending: PendingShiftClick): Promise<
 
     return tryReorderByActivePane(updatedPending, currentPanes, container);
   } catch (error) {
-    console.warn(DEBUG_PREFIX, 'block resolve failed', error);
+    debugWarn(DEBUG_PREFIX, 'block resolve failed', error);
 
     return false;
   }
@@ -657,14 +658,14 @@ const resolveBlockTargetViaLogseq = async (pending: PendingShiftClick): Promise<
 
 const resolvePageTargetViaLogseq = async (pending: PendingShiftClick): Promise<boolean> => {
   if (!logseq?.Editor?.getPage) {
-    console.log(DEBUG_PREFIX, 'logseq Editor API unavailable for page resolve');
+    debugLog(DEBUG_PREFIX, 'logseq Editor API unavailable for page resolve');
 
     return false;
   }
   try {
     const page = await logseq.Editor.getPage(pending.targetId);
     if (!page) {
-      console.log(DEBUG_PREFIX, 'page resolve returned empty', { targetId: pending.targetId });
+      debugLog(DEBUG_PREFIX, 'page resolve returned empty', { targetId: pending.targetId });
 
       return false;
     }
@@ -681,7 +682,7 @@ const resolvePageTargetViaLogseq = async (pending: PendingShiftClick): Promise<b
       targetCandidates: pageCandidates,
     };
     globalState.pendingShiftClick = updatedPending;
-    console.log(DEBUG_PREFIX, 'page resolved via logseq', {
+    debugLog(DEBUG_PREFIX, 'page resolved via logseq', {
       targetId: pending.targetId,
       pageName,
       pageCandidates,
@@ -700,7 +701,7 @@ const resolvePageTargetViaLogseq = async (pending: PendingShiftClick): Promise<b
 
     return tryReorderByActivePane(updatedPending, currentPanes, container);
   } catch (error) {
-    console.warn(DEBUG_PREFIX, 'page resolve failed', error);
+    debugWarn(DEBUG_PREFIX, 'page resolve failed', error);
 
     return false;
   }
@@ -718,7 +719,7 @@ const attemptShiftClickReorder = (
   if (shouldCheckNewPane) {
     const newPaneCandidate = getNewPaneCandidate(currentPanes);
     if (newPaneCandidate) {
-      console.log(DEBUG_PREFIX, 'new pane candidate detected', {
+      debugLog(DEBUG_PREFIX, 'new pane candidate detected', {
         targetPaneId: getPaneIdFromPane(newPaneCandidate),
       });
       const newPaneId = getPaneIdFromPane(newPaneCandidate);
@@ -736,7 +737,7 @@ const attemptShiftClickReorder = (
   const targetPane = resolveShiftClickTargetPane(currentPending, currentPanes);
   if (targetPane) {
     const inCache = globalState.cachedPanes.includes(targetPane);
-    console.log(DEBUG_PREFIX, 'resolved target pane', {
+    debugLog(DEBUG_PREFIX, 'resolved target pane', {
       targetType: currentPending.targetType,
       targetId: currentPending.targetId,
       targetCandidates: currentPending.targetCandidates,
@@ -745,7 +746,7 @@ const attemptShiftClickReorder = (
       inCache,
     });
     if (inCache) {
-      console.log(DEBUG_PREFIX, 'fallback reorder target pane', {
+      debugLog(DEBUG_PREFIX, 'fallback reorder target pane', {
         targetPaneId: getPaneIdFromPane(targetPane),
       });
       const activePane = resolveActivePaneFromPending(currentPending, currentPanes);
@@ -753,9 +754,9 @@ const attemptShiftClickReorder = (
 
       return true;
     }
-    console.log(DEBUG_PREFIX, 'target pane not in cache, skipping reorder');
+    debugLog(DEBUG_PREFIX, 'target pane not in cache, skipping reorder');
   } else {
-    console.log(DEBUG_PREFIX, 'no target pane match', {
+    debugLog(DEBUG_PREFIX, 'no target pane match', {
       targetType: currentPending.targetType,
       targetId: currentPending.targetId,
       targetCandidates: currentPending.targetCandidates,
@@ -811,7 +812,7 @@ const scheduleExistingPaneReorder = (pending: PendingShiftClick): void => {
       const retryPending = globalState.pendingShiftClick;
       if (!retryPending || retryPending.timestamp !== pending.timestamp) return;
       if (globalState.lastPanesMutationAt > retryPending.timestamp) {
-        console.log(DEBUG_PREFIX, 'skip fallback after mutation', {
+        debugLog(DEBUG_PREFIX, 'skip fallback after mutation', {
           lastMutationAt: globalState.lastPanesMutationAt,
           pendingAt: retryPending.timestamp,
         });
@@ -859,7 +860,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       rawTarget && rawTarget.nodeType === 1 ? (rawTarget as HTMLElement) : rawTarget?.parentElement;
     if (!target) return;
 
-    console.log(DEBUG_PREFIX, 'shift mousedown', {
+    debugLog(DEBUG_PREFIX, 'shift mousedown', {
       tag: target.tagName,
       className: target.className,
     });
@@ -876,7 +877,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       activePaneId,
       activePaneIndex,
     };
-    console.log(DEBUG_PREFIX, 'pending set', globalState.pendingShiftClick);
+    debugLog(DEBUG_PREFIX, 'pending set', globalState.pendingShiftClick);
     startShiftClickPaneWatcher();
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
@@ -894,7 +895,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
     if (!searchTarget) return;
 
     const pendingSearchFocus = createPendingSearchFocus(searchTarget);
-    console.log(DEBUG_PREFIX, 'search click focus pending', pendingSearchFocus);
+    debugLog(DEBUG_PREFIX, 'search click focus pending', pendingSearchFocus);
     scheduleSearchPaneFocus(pendingSearchFocus);
   };
 
@@ -916,7 +917,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
 
     const selectionContainer = findSearchContainer(selectedItem) ?? container;
     const sectionType = getSearchSectionType(selectedItem, selectionContainer);
-    console.log(DEBUG_PREFIX, 'search enter selection', {
+    debugLog(DEBUG_PREFIX, 'search enter selection', {
       tag: selectedItem.tagName,
       className: selectedItem.className,
       sectionType,
@@ -930,7 +931,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
 
     if (!event.shiftKey) {
       const pendingSearchFocus = createPendingSearchFocus(searchTarget);
-      console.log(DEBUG_PREFIX, 'search enter focus pending', pendingSearchFocus);
+      debugLog(DEBUG_PREFIX, 'search enter focus pending', pendingSearchFocus);
       scheduleSearchPaneFocus(pendingSearchFocus);
 
       return;
@@ -946,7 +947,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       activePaneId,
       activePaneIndex,
     };
-    console.log(DEBUG_PREFIX, 'shift+enter pending set', globalState.pendingShiftClick);
+    debugLog(DEBUG_PREFIX, 'shift+enter pending set', globalState.pendingShiftClick);
     startShiftClickPaneWatcher();
     scheduleExistingPaneReorder(globalState.pendingShiftClick);
   };
@@ -956,7 +957,7 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
   targetWindow.addEventListener('mousedown', handleMouseDown, true);
   targetWindow.addEventListener('click', handleClick, true);
   targetWindow.addEventListener('keydown', handleKeyDown, true);
-  console.log(DEBUG_PREFIX, 'listeners attached to parent.window');
+  debugLog(DEBUG_PREFIX, 'listeners attached to parent.window');
 
   return () => {
     targetWindow.removeEventListener('mousedown', handleMouseDown, true);

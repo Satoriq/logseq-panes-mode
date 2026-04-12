@@ -1,11 +1,12 @@
 import { LOGSEQ_UI_SELECTORS } from '../../core/constants';
-import { manageActionButtonsPosition } from '../layout/layout';
+import { manageActionButtonsPosition } from '../../core/layout/layout';
+import { debugWarn } from '../../core/logger';
 
 export const initLeftSidebarObserver = (): MutationObserver | null => {
   const leftSidebar = parent.document.querySelector<HTMLElement>(LOGSEQ_UI_SELECTORS.leftSidebar);
   let isLeftSidebarOpenCached = leftSidebar?.classList.contains('is-open') || false;
   if (!leftSidebar) {
-    console.warn('Left sidebar not found, skipping toggle observer setup.');
+    debugWarn('Left sidebar not found, skipping toggle observer setup.');
 
     return null;
   }
