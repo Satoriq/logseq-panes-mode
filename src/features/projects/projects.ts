@@ -6,6 +6,7 @@ import {
   debugWarn,
 } from '../../core/logger';
 import {
+  getPaneCloseButton,
   getPaneIdFromPane,
   getParentElementById,
   getRightSidebarContainer,
@@ -534,7 +535,7 @@ const closePaneByIndexAsync = (paneIndex: number): Promise<void> => {
 
       return;
     }
-    const closeButton = pane.querySelector('[title="Close"]') as HTMLElement | null;
+    const closeButton = getPaneCloseButton(pane);
     if (!closeButton) {
       resolve();
 

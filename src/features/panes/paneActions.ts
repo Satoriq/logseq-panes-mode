@@ -1,4 +1,4 @@
-import { getPaneIdFromPane } from '../../core/domUtils';
+import { getPaneCloseButton, getPaneIdFromPane } from '../../core/domUtils';
 import { isActivePaneIndexValid, globalState } from '../../core/pluginGlobalState';
 import { readLastActivePanesFromStorage } from '../../core/storage';
 import { EXPECTED_MUTATIONS } from '../observers/types';
@@ -57,7 +57,7 @@ export const closePaneByIndex = (paneIndex: number, updateTabs: (panes?: Element
   const isOnlyPane = currentPanes.length === 1;
   const pane = currentPanes[paneIndex];
   if (!pane) return;
-  const closeButton = pane.querySelector('[title="Close"]') as HTMLElement | null;
+  const closeButton = getPaneCloseButton(pane);
   if (!closeButton) return;
 
   cleanupPaneListeners(pane);
@@ -283,7 +283,7 @@ const closePaneTargetsSequentially = async (targets: PendingPaneCloseTarget[]): 
     const pane = resolvePendingPaneCloseTarget(target, currentPanes);
     if (!pane) continue;
 
-    const closeButton = pane.querySelector('[title="Close"]') as HTMLElement | null;
+    const closeButton = getPaneCloseButton(pane);
     if (!closeButton) continue;
 
     cleanupPaneListeners(pane);

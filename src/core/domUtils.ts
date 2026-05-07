@@ -22,6 +22,14 @@ const DB_HEADER_TITLE_WRITE_SELECTORS = [
   '.sidebar-item-header .page-title > span.overflow-hidden.text-ellipsis',
   '.sidebar-item-header .page-title > span',
 ];
+const LEGACY_PANE_CLOSE_BUTTON_SELECTORS = ['[title="Close"]', '[aria-label="Close"]'];
+const DB_PANE_CLOSE_BUTTON_SELECTORS = [
+  '.sidebar-item-header [title="Close"]',
+  '.sidebar-item-header [aria-label="Close"]',
+];
+const DB_PANE_CLOSE_ICON_SELECTORS = ['.ls-icon-x', '.tabler-icon-x', '.ti.ls-icon-x'].join(
+  ', '
+);
 
 const normalizePaneTitle = (value: string): string =>
   value.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -107,6 +115,42 @@ export const getLeftContainer = (): HTMLElement | null => {
 
 export const getMainContent = (): HTMLElement | null => {
   return queryParent<HTMLElement>(LOGSEQ_UI_SELECTORS.mainContent);
+};
+
+export const getPaneCloseButton = (pane: Element): HTMLElement | null => {
+  if (APP_SETTINGS_CONFIG.isDBVersion) {
+    return (
+      getFirstPaneCloseButtonBySelectors(pane, DB_PANE_CLOSE_BUTTON_SELECTORS) ??
+      getDbPaneCloseButtonByIcon(pane) ??
+      getFirstPaneCloseButtonBySelectors(pane, LEGACY_PANE_CLOSE_BUTTON_SELECTORS)
+    );
+  }
+
+  return getFirstPaneCloseButtonBySelectors(pane, LEGACY_PANE_CLOSE_BUTTON_SELECTORS);
+};
+
+const getFirstPaneCloseButtonBySelectors = (
+  pane: Element,
+  selectors: string[]
+): HTMLElement | null => {
+  for (const selector of selectors) {
+    const button = pane.querySelector<HTMLElement>(selector);
+    if (button) return button;
+  }
+
+  return null;
+};
+
+const getDbPaneCloseButtonByIcon = (pane: Element): HTMLElement | null => {
+  const paneHeader = pane.querySelector<HTMLElement>('.sidebar-item-header') ?? pane;
+  const buttonCandidates = Array.from(
+    paneHeader.querySelectorAll<HTMLElement>('button, [role="button"]')
+  );
+
+  return (
+    buttonCandidates.find(button => Boolean(button.querySelector(DB_PANE_CLOSE_ICON_SELECTORS))) ??
+    null
+  );
 };
 
 const getHeaderTitleElementsBySelectors = (
