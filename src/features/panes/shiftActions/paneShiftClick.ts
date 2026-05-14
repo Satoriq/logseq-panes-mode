@@ -41,6 +41,17 @@ const DB_SHIFT_CLICK_SELECTORS = {
 const DEBUG_PREFIX = '[PanesMode][ShiftClick]';
 
 const SEARCH_HIGHLIGHTED_SPAN_SELECTOR = '.ui__list-item-highlighted-span, mark';
+const SEARCH_SELECTED_ITEM_SELECTOR = [
+  '[data-cmdk-item="true"][aria-selected="true"]',
+  '[data-cmdk-item="true"][data-selected="true"]',
+  '[cmdk-item][aria-selected="true"]',
+  '[cmdk-item][data-selected="true"]',
+  '[role="option"][aria-selected="true"]',
+  '[aria-selected="true"]',
+  '[data-selected="true"]',
+  '[data-highlighted="true"]',
+  '[data-highlighted]',
+].join(', ');
 
 const SEARCH_SECTION_LABELS = ['pages', 'blocks', 'recents'] as const;
 
@@ -63,6 +74,12 @@ type PendingSearchFocus = Pick<
   PendingShiftClick,
   'targetType' | 'targetId' | 'targetCandidates' | 'searchSection' | 'timestamp'
 >;
+
+type ActivePaneContext = Pick<PendingShiftClick, 'activePaneId' | 'activePaneIndex'>;
+
+type SearchOpenActivePaneContext = ActivePaneContext & {
+  timestamp: number;
+};
 
 const buildPageCandidates = (
   pageName: string | null,
@@ -258,6 +275,51 @@ const findSearchItemForElement = (
   return items.find(item => item.contains(element)) ?? null;
 };
 
+const resolveSearchItemElement = (
+  element: HTMLElement,
+  container: HTMLElement,
+  allItems: HTMLElement[],
+  leafItems: HTMLElement[]
+): HTMLElement | null => {
+  const fromLeaf = findSearchItemForElement(element, container, leafItems);
+  if (fromLeaf) return fromLeaf;
+
+  const containingLeaf = leafItems.find(item => element.contains(item));
+  if (containingLeaf) return containingLeaf;
+
+  const fromAll = findSearchItemForElement(element, container, allItems);
+  if (fromAll) return fromAll;
+
+  const itemSelector = getSearchItemSelector();
+  const closestItem = element.closest(itemSelector) as HTMLElement | null;
+  if (!closestItem || !container.contains(closestItem)) return null;
+
+  return (
+    leafItems.find(item => closestItem.contains(item)) ??
+    allItems.find(item => item === closestItem || item.contains(closestItem)) ??
+    closestItem
+  );
+};
+
+const findExplicitSelectedSearchItem = (
+  container: HTMLElement,
+  allItems: HTMLElement[],
+  leafItems: HTMLElement[]
+): HTMLElement | null => {
+  const selectedElements = Array.from(
+    container.querySelectorAll<HTMLElement>(SEARCH_SELECTED_ITEM_SELECTOR)
+  );
+
+  for (const selectedElement of selectedElements) {
+    const item = resolveSearchItemElement(selectedElement, container, allItems, leafItems);
+    if ((item?.innerText || item?.textContent || '').trim()) {
+      return item;
+    }
+  }
+
+  return null;
+};
+
 const getOpacityValue = (element: HTMLElement): number => {
   const opacity = parent.window.getComputedStyle(element).opacity;
   const value = parseFloat(opacity);
@@ -266,19 +328,38 @@ const getOpacityValue = (element: HTMLElement): number => {
 };
 
 const getSearchSelectedItem = (container: HTMLElement): HTMLElement | null => {
+  const { all, leaf } = getSearchItems(container);
+  if (leaf.length === 0) return null;
+
+  const explicitSelected = findExplicitSelectedSearchItem(container, all, leaf);
+  if (explicitSelected) {
+    debugLog(DEBUG_PREFIX, 'search selection from selected attribute', {
+      opacity: getOpacityValue(explicitSelected),
+      sectionType: getSearchSectionType(explicitSelected, container),
+    });
+
+    return explicitSelected;
+  }
+
   const inlineSelected = findInlineOpacitySearchItem(container) ?? findInlineOpacitySearchItem();
   if (inlineSelected) {
     const inlineContainer = findSearchContainer(inlineSelected) ?? container;
+    const inlineItems =
+      inlineContainer === container ? { all, leaf } : getSearchItems(inlineContainer);
+    const resolvedInlineSelected =
+      resolveSearchItemElement(
+        inlineSelected,
+        inlineContainer,
+        inlineItems.all,
+        inlineItems.leaf
+      ) ?? inlineSelected;
     debugLog(DEBUG_PREFIX, 'search selection from inline opacity', {
-      opacity: getOpacityValue(inlineSelected),
-      sectionType: getSearchSectionType(inlineSelected, inlineContainer),
+      opacity: getOpacityValue(resolvedInlineSelected),
+      sectionType: getSearchSectionType(resolvedInlineSelected, inlineContainer),
     });
 
-    return inlineSelected;
+    return resolvedInlineSelected;
   }
-
-  const { all, leaf } = getSearchItems(container);
-  if (leaf.length === 0) return null;
 
   const activeElement = parent.document.activeElement as HTMLElement | null;
   const fromActive = findSearchItemForElement(activeElement, container, leaf);
@@ -522,8 +603,41 @@ let pendingShiftClickTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingShiftClickRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingSearchFocusTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingSearchFocusRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let searchOpenActivePaneContext: SearchOpenActivePaneContext | null = null;
 const SHIFT_CLICK_FALLBACK_DELAY_MS = 0;
 const SHIFT_CLICK_RETRY_DELAY_MS = 200;
+const SEARCH_OPEN_CONTEXT_TTL_MS = 120_000;
+
+const rememberSearchOpenActivePaneContext = (): void => {
+  const activePaneContext = getActivePaneContextFromState();
+  if (!activePaneContext.activePaneId && activePaneContext.activePaneIndex === null) return;
+  searchOpenActivePaneContext = {
+    ...activePaneContext,
+    timestamp: Date.now(),
+  };
+};
+
+const getSearchOpenActivePaneContext = (): ActivePaneContext | null => {
+  if (!searchOpenActivePaneContext) return null;
+  if (Date.now() - searchOpenActivePaneContext.timestamp > SEARCH_OPEN_CONTEXT_TTL_MS) {
+    searchOpenActivePaneContext = null;
+
+    return null;
+  }
+
+  return {
+    activePaneId: searchOpenActivePaneContext.activePaneId,
+    activePaneIndex: searchOpenActivePaneContext.activePaneIndex,
+  };
+};
+
+const shouldRememberSearchOpenContext = (event: KeyboardEvent): boolean => {
+  const key = event.key?.toLowerCase();
+  if (key !== 'p' && key !== 'k') return false;
+  if (!event.metaKey && !event.ctrlKey) return false;
+
+  return !event.altKey && !event.shiftKey;
+};
 
 const createPendingSearchFocus = (target: ShiftClickTarget): PendingSearchFocus => ({
   targetType: target.type,
@@ -922,17 +1036,17 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
 
   const setPendingShiftClickFromTarget = (
     target: HTMLElement,
-    shiftTarget: ShiftClickTarget
+    shiftTarget: ShiftClickTarget,
+    activePaneContext: ActivePaneContext = getActivePaneContext(target)
   ): void => {
-    const { activePaneId, activePaneIndex } = getActivePaneContext(target);
     globalState.pendingShiftClick = {
       targetType: shiftTarget.type,
       targetId: shiftTarget.id,
       targetCandidates: shiftTarget.candidates ?? [shiftTarget.id],
       searchSection: shiftTarget.searchSection ?? null,
       timestamp: Date.now(),
-      activePaneId,
-      activePaneIndex,
+      activePaneId: activePaneContext.activePaneId,
+      activePaneIndex: activePaneContext.activePaneIndex,
     };
     debugLog(DEBUG_PREFIX, 'pending set', globalState.pendingShiftClick);
     startShiftClickPaneWatcher();
@@ -984,13 +1098,27 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!globalState.isPanesModeModeActive) return;
+    if (shouldRememberSearchOpenContext(event)) {
+      rememberSearchOpenActivePaneContext();
+
+      return;
+    }
+    if (event.key === 'Escape') {
+      searchOpenActivePaneContext = null;
+
+      return;
+    }
     if (!isEnterKey(event)) return;
 
     const target = getEventTargetElement(event);
     const activeElement = parent.document.activeElement as HTMLElement | null;
     const container =
       findSearchContainer(target) ?? findSearchContainer(activeElement) ?? findSearchContainer();
-    if (!container) return;
+    if (!container) {
+      searchOpenActivePaneContext = null;
+
+      return;
+    }
 
     const selectedItem = getSearchSelectedItem(container);
     if (!selectedItem) return;
@@ -1013,23 +1141,16 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       const pendingSearchFocus = createPendingSearchFocus(searchTarget);
       debugLog(DEBUG_PREFIX, 'search enter focus pending', pendingSearchFocus);
       scheduleSearchPaneFocus(pendingSearchFocus);
+      searchOpenActivePaneContext = null;
 
       return;
     }
 
-    const { activePaneId, activePaneIndex } = getActivePaneContext(selectedItem);
-    globalState.pendingShiftClick = {
-      targetType: searchTarget.type,
-      targetId: searchTarget.id,
-      targetCandidates: searchTarget.candidates ?? [searchTarget.id],
-      searchSection: searchTarget.searchSection ?? null,
-      timestamp: Date.now(),
-      activePaneId,
-      activePaneIndex,
-    };
+    const activePaneContext =
+      getSearchOpenActivePaneContext() ?? getActivePaneContext(selectedItem);
+    setPendingShiftClickFromTarget(selectedItem, searchTarget, activePaneContext);
     debugLog(DEBUG_PREFIX, 'shift+enter pending set', globalState.pendingShiftClick);
-    startShiftClickPaneWatcher();
-    scheduleExistingPaneReorder(globalState.pendingShiftClick);
+    searchOpenActivePaneContext = null;
   };
 
   const targetWindow = parent.window ?? window;
@@ -1059,5 +1180,6 @@ export const setupShiftClickPaneTracking = (): (() => void) => {
       clearTimeout(pendingSearchFocusRetryTimer);
       pendingSearchFocusRetryTimer = null;
     }
+    searchOpenActivePaneContext = null;
   };
 };
